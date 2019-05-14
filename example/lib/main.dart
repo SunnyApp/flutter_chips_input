@@ -76,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 // enabled: false,
                 // errorText: field.errorText,
               ),
-              onFocusChanged: (value) {
+              onLostFocus: (value) {
                 _textController.text = value;
               },
               findSuggestions: (String query) {

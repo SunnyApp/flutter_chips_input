@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 
 typedef ChipsInputSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
 typedef ChipSelected<T> = void Function(T data, bool selected);
+
+/// When focus is lost, the component may wish to append any in-flight query automatically.
+typedef OnLostFocus<T> = T Function(String);
 typedef ChipsBuilder<T> = Widget Function(BuildContext context, ChipsInputState<T> state, T data);
 
 class ChipSuggestions<T> {
@@ -28,11 +31,11 @@ class ChipsInput<T> extends StatefulWidget {
     @required this.onChanged,
     this.onChipTapped,
     this.maxChips,
-    this.onFocusChanged,
+    this.onLostFocus,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
-  final ValueChanged<String> onFocusChanged;
+  final OnLostFocus onLostFocus;
   final InputDecoration decoration;
   final bool enabled;
   final ChipsInputSuggestions findSuggestions;
@@ -73,10 +76,13 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     _updateTextInputState();
     _initFocusNode();
 
-    if (widget.onFocusChanged != null) {
+    if (widget.onLostFocus != null) {
       _focusNode.addListener(() {
         if (!_focusNode.hasFocus) {
-          widget.onFocusChanged(this.text);
+          final result = widget.onLostFocus(this.text);
+          if (result != null) {
+            selectSuggestion(result);
+          }
         }
       });
     }
