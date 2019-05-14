@@ -28,10 +28,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     const mockResults = <AppProfile>[
-      AppProfile('John Doe', 'jdoe@flutter.io',
-          'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
-      AppProfile('Paul', 'paul@google.com',
-          'https://mbtskoudsalg.com/images/person-stock-image-png.png'),
+      AppProfile('John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
+      AppProfile('Paul', 'paul@google.com', 'https://mbtskoudsalg.com/images/person-stock-image-png.png'),
       AppProfile('Fred', 'fred@google.com',
           'https://media.istockphoto.com/photos/feeling-great-about-my-corporate-choices-picture-id507296326'),
       AppProfile('Brian', 'brian@flutter.io',
@@ -64,11 +62,11 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             ChipsInput(
               initialValue: [
-                AppProfile('John Doe', 'jdoe@flutter.io',
-                    'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
+                AppProfile(
+                    'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
               enabled: true,
-              maxChips: 2,
+              maxChips: 5,
               decoration: InputDecoration(
                 // prefixIcon: Icon(Icons.search),
                 // hintText: formControl.hint,
@@ -79,21 +77,26 @@ class _MyHomePageState extends State<MyHomePage> {
               findSuggestions: (String query) {
                 if (query.length != 0) {
                   var lowercaseQuery = query.toLowerCase();
-                  return mockResults.where((profile) {
-                    return profile.name
-                            .toLowerCase()
-                            .contains(query.toLowerCase()) ||
-                        profile.email
-                            .toLowerCase()
-                            .contains(query.toLowerCase());
-                  }).toList(growable: false)
+                  var foundResults = mockResults.where(
+                    (profile) {
+                      return profile.name.toLowerCase().contains(lowercaseQuery) ||
+                          profile.email.toLowerCase().contains(lowercaseQuery);
+                    },
+                  ).toList(growable: false)
                     ..sort((a, b) => a.name
                         .toLowerCase()
                         .indexOf(lowercaseQuery)
-                        .compareTo(
-                            b.name.toLowerCase().indexOf(lowercaseQuery)));
+                        .compareTo(b.name.toLowerCase().indexOf(lowercaseQuery)));
+                  var exactMatch = mockResults.firstWhere(
+                    (profile) =>
+                        profile.name.toLowerCase() == lowercaseQuery || profile.email.toLowerCase() == lowercaseQuery,
+                    orElse: () => null,
+                  );
+                  return ChipSuggestions(
+                      suggestions: foundResults,
+                      match: foundResults.length == 1 && exactMatch != null ? exactMatch : null);
                 } else {
-                  return const <AppProfile>[];
+                  return ChipSuggestions.empty;
                 }
               },
               onChanged: (data) {
@@ -138,10 +141,7 @@ class AppProfile {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AppProfile &&
-          runtimeType == other.runtimeType &&
-          name == other.name;
+      identical(this, other) || other is AppProfile && runtimeType == other.runtimeType && name == other.name;
 
   @override
   int get hashCode => name.hashCode;

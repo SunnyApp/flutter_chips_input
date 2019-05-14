@@ -3,10 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-typedef ChipsInputSuggestions<T> = FutureOr<List<T>> Function(String query);
+typedef ChipsInputSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
 typedef ChipSelected<T> = void Function(T data, bool selected);
-typedef ChipsBuilder<T> = Widget Function(
-    BuildContext context, ChipsInputState<T> state, T data);
+typedef ChipsBuilder<T> = Widget Function(BuildContext context, ChipsInputState<T> state, T data);
+
+class ChipSuggestions<T> {
+  final List<T> suggestions;
+  final T match;
+
+  const ChipSuggestions({this.suggestions, this.match});
+
+  static const empty = ChipSuggestions();
+}
 
 class ChipsInput<T> extends StatefulWidget {
   ChipsInput({
@@ -15,12 +23,12 @@ class ChipsInput<T> extends StatefulWidget {
     this.decoration = const InputDecoration(),
     this.enabled = true,
     @required this.chipBuilder,
-    @required this.suggestionBuilder,
-    @required this.findSuggestions,
+    this.suggestionBuilder,
+    this.findSuggestions,
     @required this.onChanged,
     this.onChipTapped,
     this.maxChips,
-  }) : assert(maxChips == null || initialValue.length <= maxChips),
+  })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
   final InputDecoration decoration;
@@ -37,9 +45,9 @@ class ChipsInput<T> extends StatefulWidget {
   ChipsInputState<T> createState() => ChipsInputState<T>();
 }
 
-class ChipsInputState<T> extends State<ChipsInput<T>>
-    implements TextInputClient {
-  static const kObjectReplacementChar = 0xFFFC;
+class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient {
+  static const kObjectReplacementChar = 58;
+  static const kSpace = 32;
   Set<T> _chips = Set<T>();
   List<T> _suggestions;
   StreamController<List<T>> _suggestionsStreamController;
@@ -71,7 +79,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     setState(() {
       debugPrint("Initializing focus node");
       if (widget.enabled) {
-        if (widget.maxChips == null || _chips.length < widget.maxChips){
+        if (widget.maxChips == null || _chips.length < widget.maxChips) {
           this._focusNode = FocusNode();
           (() async {
             await this._initOverlayEntry();
@@ -81,8 +89,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
               this._suggestionsBoxController.open();
             }
           })();
-        }
-        else
+        } else
           this._focusNode = AlwaysDisabledFocusNode();
       } else
         this._focusNode = AlwaysDisabledFocusNode();
@@ -124,8 +131,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
       builder: (context) {
         return StreamBuilder(
           stream: _suggestionsStreamController.stream,
-          builder:
-              (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+          builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
             if (snapshot.data != null && snapshot.data?.length != 0)
               return Positioned(
                 width: size.width,
@@ -139,8 +145,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
                       shrinkWrap: true,
                       itemCount: snapshot.data?.length ?? 0,
                       itemBuilder: (BuildContext context, int index) {
-                        return widget.suggestionBuilder(
-                            context, this, _suggestions[index]);
+                        return widget.suggestionBuilder(context, this, _suggestions[index]);
                       },
                     ),
                   ),
@@ -163,7 +168,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   }
 
   void requestKeyboard() {
-    if (_focusNode.hasFocus) {
+    if (_focusNode == null) {
+      return;
+    }
+    if (_focusNode?.hasFocus == true) {
       _openInputConnection();
     } else {
       FocusScope.of(context).requestFocus(_focusNode);
@@ -209,9 +217,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
   @override
   Widget build(BuildContext context) {
-    var chipsChildren = _chips
-        .map<Widget>((data) => widget.chipBuilder(context, this, data))
-        .toList();
+    var chipsChildren = _chips.map<Widget>((data) => widget.chipBuilder(context, this, data)).toList();
 
     final theme = Theme.of(context);
 
@@ -270,9 +276,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   }
 
   int _countReplacements(TextEditingValue value) {
-    return value.text.codeUnits
-        .where((ch) => ch == kObjectReplacementChar)
-        .length;
+    return value.text.codeUnits.where((ch) => ch == kObjectReplacementChar).length;
   }
 
   @override
@@ -281,25 +285,26 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   }
 
   void _updateTextInputState() {
-    final text =
-        String.fromCharCodes(_chips.map((_) => kObjectReplacementChar));
+    final text = String.fromCharCodes(_chips.expand((_) => [kObjectReplacementChar]));
     _value = TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-      composing: TextRange(start: 0, end: text.length),
+      text: "$text",
     );
-    if (_connection == null)
-      _connection = TextInput.attach(this, TextInputConfiguration());
+    if (_connection == null) _connection = TextInput.attach(this, TextInputConfiguration());
     _connection.setEditingState(_value);
+    requestKeyboard();
   }
 
   void _onSearchChanged(String value) async {
     final localId = ++_searchId;
-    final results = await widget.findSuggestions(value);
+    final ChipSuggestions results = await widget.findSuggestions(value);
     if (_searchId == localId && mounted) {
-      setState(() => _suggestions = results
-          .where((profile) => !_chips.contains(profile))
-          .toList(growable: false));
+      if (results.match != null) {
+        selectSuggestion(results.match);
+      }
+      if (results.suggestions != null) {
+        setState(() =>
+            _suggestions = results.suggestions.where((profile) => !_chips.contains(profile))?.toList(growable: false));
+      }
     }
     _suggestionsStreamController.add(_suggestions);
   }
@@ -329,8 +334,7 @@ class _TextCaret extends StatefulWidget {
   _TextCursorState createState() => _TextCursorState();
 }
 
-class _TextCursorState extends State<_TextCaret>
-    with SingleTickerProviderStateMixin {
+class _TextCursorState extends State<_TextCaret> with SingleTickerProviderStateMixin {
   bool _displayed = false;
   Timer _timer;
 
@@ -384,8 +388,8 @@ class _SuggestionsBoxController {
 
   close() {
     if (!this._isOpened) return;
-    assert(this._overlayEntry != null);
-    this._overlayEntry.remove();
+//    assert(this._overlayEntry != null);
+    this._overlayEntry?.remove();
     this._isOpened = false;
   }
 
