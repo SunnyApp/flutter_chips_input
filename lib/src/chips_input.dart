@@ -28,9 +28,11 @@ class ChipsInput<T> extends StatefulWidget {
     @required this.onChanged,
     this.onChipTapped,
     this.maxChips,
+    this.onFocusChanged,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
+  final ValueChanged<String> onFocusChanged;
   final InputDecoration decoration;
   final bool enabled;
   final ChipsInputSuggestions findSuggestions;
@@ -46,8 +48,7 @@ class ChipsInput<T> extends StatefulWidget {
 }
 
 class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient {
-  static const kObjectReplacementChar = 58;
-  static const kSpace = 32;
+  static const kObjectReplacementChar = 0xFFFC;
   Set<T> _chips = Set<T>();
   List<T> _suggestions;
   StreamController<List<T>> _suggestionsStreamController;
@@ -71,6 +72,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     _chips.addAll(widget.initialValue);
     _updateTextInputState();
     _initFocusNode();
+
+    if (widget.onFocusChanged != null) {
+      _focusNode.addListener(() {
+        if (!_focusNode.hasFocus) {
+          widget.onFocusChanged(this.text);
+        }
+      });
+    }
     this._suggestionsBoxController = _SuggestionsBoxController(context);
     this._suggestionsStreamController = StreamController<List<T>>.broadcast();
   }
@@ -84,6 +93,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
           (() async {
             await this._initOverlayEntry();
             this._focusNode.addListener(_onFocusChanged);
+
             // in case we already missed the focus event
             if (this._focusNode.hasFocus) {
               this._suggestionsBoxController.open();

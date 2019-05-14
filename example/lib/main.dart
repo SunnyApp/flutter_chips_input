@@ -25,6 +25,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final TextEditingController _textController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     const mockResults = <AppProfile>[
@@ -74,6 +76,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 // enabled: false,
                 // errorText: field.errorText,
               ),
+              onFocusChanged: (value) {
+                _textController.text = value;
+              },
               findSuggestions: (String query) {
                 if (query.length != 0) {
                   var lowercaseQuery = query.toLowerCase();
@@ -124,6 +129,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   onTap: () => state.selectSuggestion(profile),
                 );
               },
+            ),
+            TextField(
+              controller: _textController,
             ),
           ],
         ),
