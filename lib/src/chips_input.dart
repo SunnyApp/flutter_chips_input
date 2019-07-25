@@ -219,7 +219,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
 
   @override
   void dispose() {
-    _focusNode?.dispose();
+    if (widget.focusNode == null) {
+      _focusNode?.dispose();
+    }
     _closeInputConnectionIfNeeded();
     _suggestionsStreamController.close();
     super.dispose();
