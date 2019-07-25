@@ -29,6 +29,12 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _textController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _textController.addListener(() => setState(() {}));
+  }
+
+  @override
   Widget build(BuildContext context) {
     const mockResults = <AppProfile>[
       AppProfile('John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
@@ -62,6 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Padding(
         padding: EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             ChipsInput(
               initialValue: [
@@ -71,6 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
               autofocus: true,
               enabled: true,
               maxChips: 5,
+              textEditingController: _textController,
               inputConfiguration: TextInputConfiguration(
                 autocorrect: false,
               ),
@@ -81,9 +89,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 // enabled: false,
                 // errorText: field.errorText,
               ),
-              onLostFocus: (value) {
-                _textController.text = value;
-              },
               findSuggestions: (String query) {
                 if (query.length != 0) {
                   var lowercaseQuery = query.toLowerCase();
@@ -135,8 +140,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               },
             ),
-            TextField(
-              controller: _textController,
+            Text(_textController.text ?? ""),
+            MaterialButton(
+              elevation: 1,
+              color: Colors.orange,
+              onPressed: () {
+                _textController.text = "";
+              },
+              child: Text("Reset Search"),
             ),
           ],
         ),
