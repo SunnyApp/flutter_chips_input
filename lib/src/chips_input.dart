@@ -77,6 +77,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
 
   bool get _hasInputConnection => _connection != null && _connection.attached;
 
+  List<T> get chips => List.of(_chips, growable: false);
+
   set query(String query) {
     final newValue = _chipReplacementText + query;
     _connection.setEditingState(
