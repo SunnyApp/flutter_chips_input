@@ -7,14 +7,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ccea7879-7873-4656-9a21-d45675016680" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/chips_input.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/chips_input.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -29,43 +23,6 @@
     <execution>
       <executable />
     </execution>
-  </component>
-  <component name="FindInProjectRecents">
-    <findStrings>
-      <find>updateFloatingCursor</find>
-      <find>caret</find>
-      <find>_TextCa</find>
-      <find>_onsear</find>
-      <find>_updateTextInputState</find>
-      <find>_onSearchChanged</find>
-      <find>onch</find>
-      <find>widget.onCha</find>
-      <find>initSta</find>
-      <find>textinputac</find>
-      <find>_ios</find>
-      <find>kObjectReplacementChar</find>
-      <find>field</find>
-      <find>enable</find>
-      <find>_focusNode</find>
-      <find>chipBuilder</find>
-      <find>chips.add</find>
-      <find>chips.remove</find>
-      <find>key</find>
-      <find>_initF</find>
-      <find>delete</find>
-      <find>enabled</find>
-      <find>setEditin</find>
-      <find>initializing</find>
-      <find>_connection</find>
-      <find>onSele</find>
-      <find>request</find>
-      <find>_focusN</find>
-      <find>const k</find>
-      <find>onFocusCHanged</find>
-    </findStrings>
-    <dirStrings>
-      <dir>$USER_HOME$/flutter/packages/flutter/lib</dir>
-    </dirStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -178,7 +135,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="Dart">
           <url>file://$PROJECT_DIR$/lib/src/chips_input.dart</url>
-          <line>348</line>
+          <line>352</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>

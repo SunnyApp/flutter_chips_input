@@ -99,7 +99,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   void didChangeDependencies() {
     if (_isNew) {
       _isNew = false;
-
       if (widget.autofocus) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           requestKeyboard();
@@ -109,12 +108,17 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     super.didChangeDependencies();
   }
 
+  _resetFocusNode(FocusNode newFocusNode) {
+    _focusNode?.dispose();
+    _focusNode = newFocusNode;
+  }
+
   _initFocusNode() {
     setState(() {
       debugPrint("Initializing focus node");
       if (widget.enabled) {
         if (widget.maxChips == null || _chips.length < widget.maxChips) {
-          this._focusNode = FocusNode();
+          _resetFocusNode(FocusNode());
           (() async {
             await this._initOverlayEntry();
             this._focusNode.addListener(_onFocusChanged);
@@ -125,9 +129,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
             }
           })();
         } else
-          this._focusNode = AlwaysDisabledFocusNode();
+          _resetFocusNode(AlwaysDisabledFocusNode());
       } else
-        this._focusNode = AlwaysDisabledFocusNode();
+        _resetFocusNode(AlwaysDisabledFocusNode());
     });
     debugPrint(this._focusNode.toString());
   }
