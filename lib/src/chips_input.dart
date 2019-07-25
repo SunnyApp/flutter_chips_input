@@ -256,7 +256,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
 
   @override
   Widget build(BuildContext context) {
-    var chipsChildren = _chips.map<Widget>((data) => widget.chipBuilder(context, this, data)).toList();
+    var chipsChildren =
+        _chips.map((data) => widget.chipBuilder(context, this, data)).where((data) => data != null).toList();
 
     final theme = Theme.of(context);
 
