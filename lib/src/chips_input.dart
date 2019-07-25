@@ -36,7 +36,7 @@ class ChipsInput<T> extends StatefulWidget {
     this.inputConfiguration,
     this.autofocus,
     this.focusNode,
-    this.textEditingController,
+    this.onQueryChanged,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
@@ -46,9 +46,9 @@ class ChipsInput<T> extends StatefulWidget {
   final ChipsInputSuggestions findSuggestions;
   final WidgetBuilder inputBuilder;
   final ValueChanged<List<T>> onChanged;
+  final ValueChanged<String> onQueryChanged;
   final ValueChanged<T> onChipTapped;
   final ChipsBuilder<T> chipBuilder;
-  final TextEditingController textEditingController;
   final ChipsBuilder<T> suggestionBuilder;
   final List<T> initialValue;
   final int maxChips;
@@ -74,25 +74,26 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   LayerLink _layerLink = LayerLink();
   Size size;
   bool _isNew = true;
-  TextEditingController _controller;
-
-  String get text => String.fromCharCodes(
-        _value.text.codeUnits.where((ch) => ch != kObjectReplacementChar),
-      );
 
   bool get _hasInputConnection => _connection != null && _connection.attached;
 
-  _onTextChange() {
-    // The text controller is only used to update the search query value, so we need to append the chip
-    // input before it
-    updateEditingValue(TextEditingValue(text: _chipReplacementText + widget.textEditingController.text));
+  set query(String query) {
+    final newValue = _chipReplacementText + query;
+    _connection.setEditingState(
+      TextEditingValue(
+        text: newValue,
+        selection: TextSelection.collapsed(offset: newValue.length),
+      ),
+    );
   }
+
+  String get query => String.fromCharCodes(
+        _value.text.codeUnits.where((ch) => ch != kObjectReplacementChar),
+      );
 
   @override
   void initState() {
     super.initState();
-    _controller = widget.textEditingController ?? TextEditingController();
-    widget.textEditingController?.addListener(_onTextChange);
     _chips.addAll(widget.initialValue);
     _updateTextInputState();
     _initFocusNode();
@@ -100,7 +101,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     if (widget.onLostFocus != null) {
       _focusNode.addListener(() {
         if (!_focusNode.hasFocus) {
-          final result = widget.onLostFocus(this.text);
+          final result = widget.onLostFocus(query);
           if (result != null) {
             selectSuggestion(result);
           }
@@ -219,7 +220,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   @override
   void dispose() {
     _focusNode?.dispose();
-    widget.textEditingController?.removeListener(_onTextChange);
     _closeInputConnectionIfNeeded();
     _suggestionsStreamController.close();
     super.dispose();
@@ -297,9 +297,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
+          children: [
             Text(
-              text,
+              query,
               style: theme.textTheme.subhead.copyWith(
                 height: 1.5,
               ),
@@ -342,8 +342,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
       }
       _value = value;
     });
-    _controller.value = _value.copyWith(text: text);
-    _onSearchChanged(text);
+    _onSearchChanged(query);
   }
 
   int _countReplacements(TextEditingValue value) {
@@ -380,6 +379,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
       }
     }
     _suggestionsStreamController.add(_suggestions);
+    widget.onQueryChanged?.call(value);
   }
 
   @override

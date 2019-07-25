@@ -27,6 +27,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _textController = TextEditingController();
+  final GlobalKey<ChipsInputState> key = GlobalKey();
 
   @override
   void initState() {
@@ -75,10 +76,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 AppProfile(
                     'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
+              key: key,
               autofocus: true,
               enabled: true,
               maxChips: 5,
-              textEditingController: _textController,
+              onQueryChanged: (query) => _textController.text = query,
               inputConfiguration: TextInputConfiguration(
                 autocorrect: false,
               ),
@@ -140,14 +142,25 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               },
             ),
-            Text(_textController.text ?? ""),
+            TextField(
+              enabled: false,
+              controller: _textController,
+            ),
             MaterialButton(
               elevation: 1,
               color: Colors.orange,
               onPressed: () {
-                _textController.text = "";
+                key.currentState.query = "";
               },
               child: Text("Reset Search"),
+            ),
+            MaterialButton(
+              elevation: 1,
+              color: Colors.blue,
+              onPressed: () {
+                key.currentState.query = "A Name for The Ages";
+              },
+              child: Text("Set Value"),
             ),
           ],
         ),
