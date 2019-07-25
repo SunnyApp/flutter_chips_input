@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_chips_input/flutter_chips_input.dart';
+import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 
 void main() {
   /*test('adds one to input values', () {

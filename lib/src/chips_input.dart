@@ -33,6 +33,7 @@ class ChipsInput<T> extends StatefulWidget {
     this.maxChips,
     this.onLostFocus,
     this.inputBuilder,
+    this.inputConfiguration,
     this.autofocus,
     this.focusNode,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
@@ -51,6 +52,7 @@ class ChipsInput<T> extends StatefulWidget {
   final int maxChips;
   final bool autofocus;
   final FocusNode focusNode;
+  final TextInputConfiguration inputConfiguration;
 
   @override
   ChipsInputState<T> createState() => ChipsInputState<T>();
@@ -58,7 +60,7 @@ class ChipsInput<T> extends StatefulWidget {
 
 class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient {
   static const kObjectReplacementChar = 0xFFFC;
-  Set<T> _chips = Set<T>();
+  List<T> _chips = List<T>();
   List<T> _suggestions;
   StreamController<List<T>> _suggestionsStreamController;
   int _searchId = 0;
@@ -241,9 +243,20 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     }
   }
 
+  void addChip(T data) {
+    if (widget.enabled) {
+      setState(() {
+        _chips.add(data);
+        _updateTextInputState();
+      });
+      if (widget.maxChips != null) _initFocusNode();
+      widget.onChanged(_chips.toList(growable: false));
+    }
+  }
+
   void _openInputConnection() {
     if (!_hasInputConnection) {
-      _connection = TextInput.attach(this, TextInputConfiguration());
+      _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
       _connection.setEditingState(_value);
     }
     _connection.show();
@@ -309,7 +322,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     final newCount = _countReplacements(value);
     setState(() {
       if (newCount < oldCount) {
-        _chips = Set.from(_chips.take(newCount));
+        _chips = List.from(_chips.take(newCount));
         widget.onChanged(_chips.toList(growable: false));
       }
       _value = value;
@@ -331,7 +344,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     _value = TextEditingValue(
       text: "$text",
     );
-    if (_connection == null) _connection = TextInput.attach(this, TextInputConfiguration());
+    if (_connection == null)
+      _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
     _connection.setEditingState(_value);
     requestKeyboard();
   }

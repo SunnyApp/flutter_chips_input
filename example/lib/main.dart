@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 
 void main() => runApp(MyApp());
@@ -70,6 +71,9 @@ class _MyHomePageState extends State<MyHomePage> {
               autofocus: true,
               enabled: true,
               maxChips: 5,
+              inputConfiguration: TextInputConfiguration(
+                autocorrect: false,
+              ),
               decoration: InputDecoration(
                 // prefixIcon: Icon(Icons.search),
                 // hintText: formControl.hint,
