@@ -32,6 +32,8 @@ class ChipsInput<T> extends StatefulWidget {
     this.onChipTapped,
     this.maxChips,
     this.onLostFocus,
+    this.inputBuilder,
+    this.autofocus,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
@@ -39,12 +41,14 @@ class ChipsInput<T> extends StatefulWidget {
   final InputDecoration decoration;
   final bool enabled;
   final ChipsInputSuggestions findSuggestions;
+  final WidgetBuilder inputBuilder;
   final ValueChanged<List<T>> onChanged;
   final ValueChanged<T> onChipTapped;
   final ChipsBuilder<T> chipBuilder;
   final ChipsBuilder<T> suggestionBuilder;
   final List<T> initialValue;
   final int maxChips;
+  final bool autofocus;
 
   @override
   ChipsInputState<T> createState() => ChipsInputState<T>();
@@ -62,6 +66,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   _SuggestionsBoxController _suggestionsBoxController;
   LayerLink _layerLink = LayerLink();
   Size size;
+  bool _isNew = true;
 
   String get text => String.fromCharCodes(
         _value.text.codeUnits.where((ch) => ch != kObjectReplacementChar),
@@ -88,6 +93,20 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     }
     this._suggestionsBoxController = _SuggestionsBoxController(context);
     this._suggestionsStreamController = StreamController<List<T>>.broadcast();
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (_isNew) {
+      _isNew = false;
+
+      if (widget.autofocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          requestKeyboard();
+        });
+      }
+    }
+    super.didChangeDependencies();
   }
 
   _initFocusNode() {

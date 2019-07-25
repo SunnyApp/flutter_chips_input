@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_chips_input:
+  flutter_chips_input_sunny:
       path: ../
 
 dev_dependencies:

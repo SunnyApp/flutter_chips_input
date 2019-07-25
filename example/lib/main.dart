@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_chips_input/flutter_chips_input.dart';
+import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 
 void main() => runApp(MyApp());
 
@@ -67,6 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 AppProfile(
                     'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
+              autofocus: true,
               enabled: true,
               maxChips: 5,
               decoration: InputDecoration(
