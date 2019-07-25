@@ -34,6 +34,7 @@ class ChipsInput<T> extends StatefulWidget {
     this.onLostFocus,
     this.inputBuilder,
     this.autofocus,
+    this.focusNode,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
@@ -49,6 +50,7 @@ class ChipsInput<T> extends StatefulWidget {
   final List<T> initialValue;
   final int maxChips;
   final bool autofocus;
+  final FocusNode focusNode;
 
   @override
   ChipsInputState<T> createState() => ChipsInputState<T>();
@@ -118,7 +120,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
       debugPrint("Initializing focus node");
       if (widget.enabled) {
         if (widget.maxChips == null || _chips.length < widget.maxChips) {
-          _resetFocusNode(FocusNode());
+          _resetFocusNode(widget.focusNode ?? FocusNode());
           (() async {
             await this._initOverlayEntry();
             this._focusNode.addListener(_onFocusChanged);
