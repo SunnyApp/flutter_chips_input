@@ -113,8 +113,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   }
 
   _resetFocusNode(FocusNode newFocusNode) {
-    _focusNode?.dispose();
-    _focusNode = newFocusNode;
+    if (newFocusNode != _focusNode) {
+      _focusNode?.dispose();
+      _focusNode = newFocusNode;
+    }
   }
 
   _initFocusNode() {
