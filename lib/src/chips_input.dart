@@ -262,6 +262,42 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     }
   }
 
+  bool syncChips(Iterable<T> newItems) {
+    bool changed = false;
+
+    if (widget.enabled) {
+      setState(() {
+        try {
+          final currSize = this._chips.length;
+          final newList = newItems.toList();
+          for (var i = 0; i < newItems.length; i++) {
+            final newItem = newList[i];
+            if (_chips.length > i) {
+              if (_chips[i] != newItem) {
+                changed = true;
+                _chips.removeAt(i);
+                _chips.insert(i, newItem);
+              }
+            } else {
+              changed = true;
+              _chips.add(newItem);
+            }
+          }
+
+          for (var i = newItems.length; i < currSize; i++) {
+            _chips.removeAt(i);
+            changed = true;
+          }
+          return changed;
+        } catch (e) {
+          print("Error updating list state: $e");
+          throw e;
+        }
+      });
+    }
+    return changed;
+  }
+
   void addChip(T data) {
     if (widget.enabled) {
       setState(() {

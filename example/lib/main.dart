@@ -27,7 +27,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _textController = TextEditingController();
-  final GlobalKey<ChipsInputState> key = GlobalKey();
+  final GlobalKey<ChipsInputState<AppProfile>> key = GlobalKey();
 
   @override
   void initState() {
@@ -71,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            ChipsInput(
+            ChipsInput<AppProfile>(
               initialValue: [
                 AppProfile(
                     'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
@@ -159,6 +159,17 @@ class _MyHomePageState extends State<MyHomePage> {
               color: Colors.blue,
               onPressed: () {
                 key.currentState.query = "A Name for The Ages";
+              },
+              child: Text("Set Value"),
+            ),
+            MaterialButton(
+              elevation: 1,
+              color: Colors.green,
+              onPressed: () {
+                key.currentState.syncChips([
+                  mockResults[3],
+                  mockResults[7],
+                ]);
               },
               child: Text("Set Value"),
             ),
