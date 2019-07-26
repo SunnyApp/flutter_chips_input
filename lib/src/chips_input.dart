@@ -75,7 +75,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   Size size;
   bool _isNew = true;
 
-  bool get _hasInputConnection => _connection != null && _connection.attached;
+  bool get hasInputConnection => _connection != null && _connection.attached;
 
   List<T> get chips => List.of(_chips, growable: false);
 
@@ -135,25 +135,22 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   }
 
   _initFocusNode() {
-    setState(() {
-      debugPrint("Initializing focus node");
-      if (widget.enabled) {
-        if (widget.maxChips == null || _chips.length < widget.maxChips) {
-          _resetFocusNode(widget.focusNode ?? FocusNode());
-          (() async {
-            await this._initOverlayEntry();
-            this._focusNode.addListener(_onFocusChanged);
-
-            // in case we already missed the focus event
-            if (this._focusNode.hasFocus) {
-              this._suggestionsBoxController.open();
-            }
-          })();
-        } else
-          _resetFocusNode(AlwaysDisabledFocusNode());
+    debugPrint("Initializing focus node");
+    if (widget.enabled) {
+      if (widget.maxChips == null || _chips.length < widget.maxChips) {
+        _resetFocusNode(widget.focusNode ?? FocusNode());
+        this._focusNode.addListener(_onFocusChanged);
+        (() async {
+          await this._initOverlayEntry();
+          // in case we already missed the focus event
+          if (this._focusNode.hasFocus) {
+            this._suggestionsBoxController.open();
+          }
+        })();
       } else
         _resetFocusNode(AlwaysDisabledFocusNode());
-    });
+    } else
+      _resetFocusNode(AlwaysDisabledFocusNode());
     debugPrint(this._focusNode.toString());
   }
 
@@ -229,14 +226,16 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     super.dispose();
   }
 
-  void requestKeyboard() {
+  bool requestKeyboard() {
     if (_focusNode == null) {
-      return;
+      return false;
     }
     if (_focusNode?.hasFocus == true) {
       _openInputConnection();
+      return true;
     } else {
       FocusScope.of(context).requestFocus(_focusNode);
+      return false;
     }
   }
 
@@ -310,7 +309,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   }
 
   void _openInputConnection() {
-    if (!_hasInputConnection) {
+    if (!hasInputConnection) {
       _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
       _connection.setEditingState(_value);
     }
@@ -318,7 +317,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   }
 
   void _closeInputConnectionIfNeeded() {
-    if (_hasInputConnection) {
+    if (hasInputConnection) {
       _connection.close();
       _connection = null;
     }
@@ -492,16 +491,18 @@ class _SuggestionsBoxController {
 
   _SuggestionsBoxController(this.context);
 
-  open() {
-    if (this._isOpened) return;
-    assert(this._overlayEntry != null);
-    Overlay.of(context).insert(this._overlayEntry);
-    this._isOpened = true;
+  bool open() {
+    if (this._isOpened) return true;
+    if (this._overlayEntry != null) {
+      Overlay.of(context).insert(this._overlayEntry);
+      this._isOpened = true;
+      return true;
+    }
+    return false;
   }
 
   close() {
     if (!this._isOpened) return;
-//    assert(this._overlayEntry != null);
     this._overlayEntry?.remove();
     this._isOpened = false;
   }

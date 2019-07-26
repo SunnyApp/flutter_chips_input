@@ -158,9 +158,9 @@ class _MyHomePageState extends State<MyHomePage> {
               elevation: 1,
               color: Colors.blue,
               onPressed: () {
-                key.currentState.query = "A Name for The Ages";
+                key.currentState.query = "Bill";
               },
-              child: Text("Set Value"),
+              child: Text("Set Query"),
             ),
             MaterialButton(
               elevation: 1,
@@ -171,7 +171,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   mockResults[7],
                 ]);
               },
-              child: Text("Set Value"),
+              child: Text("Set Chips"),
             ),
           ],
         ),
