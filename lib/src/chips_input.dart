@@ -77,6 +77,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   LayerLink _layerLink = LayerLink();
   Size size;
   bool _isNew = true;
+  String _suggestion;
 
   bool get hasInputConnection => _connection != null && _connection.attached;
 
@@ -90,6 +91,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
         selection: TextSelection.collapsed(offset: newValue.length),
       ),
     );
+  }
+
+  set suggestion(String suggestion) {
+    _suggestion = suggestion;
   }
 
   String get query => String.fromCharCodes(
@@ -326,29 +331,50 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     }
   }
 
+  TextSpan get _textSpan {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
+    final q = query;
+    return TextSpan(children: [
+      TextSpan(style: textTheme, text: q),
+      if (_suggestion?.toLowerCase()?.startsWith(q?.toLowerCase()) == true)
+        TextSpan(
+          text: _suggestion.substring(q.length),
+          style: textTheme.copyWith(
+            color: textTheme.color.withOpacity(0.4),
+          ),
+        ),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     var chipsChildren =
         _chips.map((data) => widget.chipBuilder(context, this, data)).where((data) => data != null).toList();
 
     final theme = Theme.of(context);
-
+    final textTheme = theme.textTheme.subhead.copyWith(height: 1.5, color: Colors.transparent);
     chipsChildren.add(
       Container(
         height: 32.0,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
+          alignment: AlignmentDirectional.centerStart,
           children: [
-            Text(
-              query,
-              style: theme.textTheme.subhead.copyWith(
-                height: 1.5,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                RichText(text: _textSpan),
+              ],
             ),
-            _TextCaret(
-              resumed: _focusNode.hasFocus,
-            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(query, style: textTheme),
+                _TextCaret(resumed: _focusNode.hasFocus),
+              ],
+            )
           ],
         ),
       ),

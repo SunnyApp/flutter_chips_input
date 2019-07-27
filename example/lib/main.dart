@@ -80,7 +80,14 @@ class _MyHomePageState extends State<MyHomePage> {
               autofocus: true,
               enabled: true,
               maxChips: 5,
-              onQueryChanged: (query) => _textController.text = query,
+              onQueryChanged: (query) {
+                if (query?.toLowerCase()?.startsWith("e") == true) {
+                  key.currentState.suggestion = "Enrique";
+                } else {
+                  key.currentState.suggestion = null;
+                }
+                return _textController.text = query;
+              },
               inputConfiguration: TextInputConfiguration(
                 autocorrect: false,
               ),
