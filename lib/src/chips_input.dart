@@ -9,6 +9,7 @@ typedef ChipSelected<T> = void Function(T data, bool selected);
 /// When focus is lost, the component may wish to append any in-flight query automatically.
 typedef OnLostFocus<T> = T Function(String);
 typedef ChipsBuilder<T> = Widget Function(BuildContext context, ChipsInputState<T> state, T data);
+typedef PerformTextInputAction = void Function(TextInputAction type);
 
 class ChipSuggestions<T> {
   final List<T> suggestions;
@@ -37,6 +38,7 @@ class ChipsInput<T> extends StatefulWidget {
     this.autofocus,
     this.focusNode,
     this.onQueryChanged,
+    this.onInputAction,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
@@ -55,6 +57,7 @@ class ChipsInput<T> extends StatefulWidget {
   final bool autofocus;
   final FocusNode focusNode;
   final TextInputConfiguration inputConfiguration;
+  final PerformTextInputAction onInputAction;
 
   @override
   ChipsInputState<T> createState() => ChipsInputState<T>();
@@ -370,27 +373,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     );
   }
 
-  @override
-  void updateEditingValue(TextEditingValue value) {
-    final oldCount = _countReplacements(_value);
-    final newCount = _countReplacements(value);
-    setState(() {
-      if (newCount < oldCount) {
-        _chips = List.from(_chips.take(newCount));
-        widget.onChanged(_chips.toList(growable: false));
-      }
-      _value = value;
-    });
-    _onSearchChanged(query);
-  }
-
   int _countReplacements(TextEditingValue value) {
     return value.text.codeUnits.where((ch) => ch == kObjectReplacementChar).length;
-  }
-
-  @override
-  void performAction(TextInputAction action) {
-    _focusNode.unfocus();
   }
 
   String get _chipReplacementText => String.fromCharCodes(_chips.expand((_) => [kObjectReplacementChar]));
@@ -421,9 +405,32 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     widget.onQueryChanged?.call(value);
   }
 
+  /// Implemented from [TextInputClient]
+  @override
+  void performAction(TextInputAction action) {
+    _focusNode.unfocus();
+    widget.onInputAction?.call(action);
+  }
+
+  /// Implemented from [TextInputClient]
   @override
   void updateFloatingCursor(RawFloatingCursorPoint point) {
     print(point);
+  }
+
+  /// Implemented from [TextInputClient]
+  @override
+  void updateEditingValue(TextEditingValue value) {
+    final oldCount = _countReplacements(_value);
+    final newCount = _countReplacements(value);
+    setState(() {
+      if (newCount < oldCount) {
+        _chips = List.from(_chips.take(newCount));
+        widget.onChanged(_chips.toList(growable: false));
+      }
+      _value = value;
+    });
+    _onSearchChanged(query);
   }
 }
 
