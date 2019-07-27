@@ -141,7 +141,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="Dart">
           <url>file://$PROJECT_DIR$/lib/src/chips_input.dart</url>
-          <line>416</line>
+          <line>420</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>

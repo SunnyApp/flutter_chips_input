@@ -9,7 +9,7 @@ typedef ChipSelected<T> = void Function(T data, bool selected);
 /// When focus is lost, the component may wish to append any in-flight query automatically.
 typedef OnLostFocus<T> = T Function(String);
 typedef ChipsBuilder<T> = Widget Function(BuildContext context, ChipsInputState<T> state, T data);
-typedef PerformTextInputAction = void Function(TextInputAction type);
+typedef PerformTextInputAction = void Function(TextInputAction type, ChipsInputState state);
 
 class ChipSuggestions<T> {
   final List<T> suggestions;
@@ -408,8 +408,11 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
   /// Implemented from [TextInputClient]
   @override
   void performAction(TextInputAction action) {
-    _focusNode.unfocus();
-    widget.onInputAction?.call(action);
+    if (widget.onInputAction != null) {
+      widget.onInputAction.call(action, this);
+    } else {
+      _focusNode.unfocus();
+    }
   }
 
   /// Implemented from [TextInputClient]
