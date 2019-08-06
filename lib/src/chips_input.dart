@@ -1,240 +1,211 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
+import 'package:flutter_chips_input_sunny/src/chips_input_controller.dart';
+import 'package:after_layout/after_layout.dart';
 
-typedef ChipsInputSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
-typedef ChipSelected<T> = void Function(T data, bool selected);
+/// Generates a list of suggestions given a query
+typedef GenerateSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
 
-/// When focus is lost, the component may wish to append any in-flight query automatically.
-typedef OnLostFocus<T> = T Function(String);
-typedef ChipsBuilder<T> = Widget Function(BuildContext context, ChipsInputState<T> state, T data);
-typedef PerformTextInputAction = void Function(TextInputAction type, ChipsInputState state);
+/// Builds a widget for a chip.  Used for autocomplete and chips
+typedef BuildChipsWidget<T> = Widget Function(BuildContext context, T data);
 
-class ChipSuggestions<T> {
-  final List<T> suggestions;
-  final T match;
+/// An action that's executed when the user clicks the keyboard action
+typedef PerformTextInputAction<T> = void Function(TextInputAction type);
 
-  const ChipSuggestions({this.suggestions, this.match});
+/// Tokenizes a chip to help provide inline completion
+typedef ChipTokenizer<T> = Iterable<String> Function(T input);
 
-  static const empty = ChipSuggestions();
-}
+/// Generic action performed on a chip
+typedef ChipAction<T> = void Function(T chip);
 
+// ignore: must_be_immutable
 class ChipsInput<T> extends StatefulWidget {
   ChipsInput({
     Key key,
-    this.initialValue = const [],
+    this.initialValue,
     this.decoration = const InputDecoration(),
     this.enabled = true,
     @required this.chipBuilder,
     this.suggestionBuilder,
     this.findSuggestions,
-    @required this.onChanged,
+    this.chipTokenizer,
     this.onChipTapped,
     this.maxChips,
-    this.onLostFocus,
-    this.inputBuilder,
     this.inputConfiguration,
     this.autofocus,
     this.focusNode,
     this.onQueryChanged,
     this.onInputAction,
+
+    /// When an inline suggestion is present and tapped.
+    this.onSuggestionTap,
+    this.controller,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
+        assert(controller == null || findSuggestions == null),
         super(key: key);
 
-  final OnLostFocus onLostFocus;
+  /// Generates tokens for a chip.  If this is provided, then inline suggestions will show up.
+  final ChipTokenizer<T> chipTokenizer;
+
+  /// Allows external control of the data within this input
+  final ChipsInputController<T> controller;
   final InputDecoration decoration;
   final bool enabled;
-  final ChipsInputSuggestions findSuggestions;
-  final WidgetBuilder inputBuilder;
-  final ValueChanged<List<T>> onChanged;
+
+  /// Callback to generate suggestions.  This is only used when _not_ providing a [controller]
+  final GenerateSuggestions findSuggestions;
+
   final ValueChanged<String> onQueryChanged;
   final ValueChanged<T> onChipTapped;
-  final ChipsBuilder<T> chipBuilder;
-  final ChipsBuilder<T> suggestionBuilder;
+  final BuildChipsWidget<T> chipBuilder;
+  final BuildChipsWidget<T> suggestionBuilder;
   final List<T> initialValue;
   final int maxChips;
   final bool autofocus;
   final FocusNode focusNode;
   final TextInputConfiguration inputConfiguration;
-  final PerformTextInputAction onInputAction;
+  final PerformTextInputAction<T> onInputAction;
+  final ChipAction<T> onSuggestionTap;
 
   @override
   ChipsInputState<T> createState() => ChipsInputState<T>();
 }
 
-class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient {
-  static const kObjectReplacementChar = 0xFFFC;
-  TextEditingValue _value = TextEditingValue();
-  List<T> _chips = List<T>();
-
-  List<T> _suggestions;
-  StreamController<List<T>> _suggestionsStreamController;
-  int _searchId = 0;
+class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<ChipsInput<T>> implements TextInputClient {
+  ChipsInputController<T> _controller;
   FocusNode _focusNode;
   TextInputConnection _connection;
-  _SuggestionsBoxController _suggestionsBoxController;
   LayerLink _layerLink = LayerLink();
-  Size size;
-  bool _isNew = true;
-  String _suggestion;
+
+  List<StreamSubscription> _streams = [];
 
   bool get hasInputConnection => _connection != null && _connection.attached;
+  GestureRecognizer _onSuggestionTap;
 
-  List<T> get chips => List.of(_chips, growable: false);
+  // A list of focus nodes we've used that need to be disposed
+  List<FocusNode> _focusNodes = [];
 
-  set query(String query) {
-    final newValue = _chipReplacementText + query;
-    _connection.setEditingState(
-      TextEditingValue(
-        text: newValue,
-        selection: TextSelection.collapsed(offset: newValue.length),
-      ),
-    );
-  }
-
-  set suggestion(String suggestion) {
-    _suggestion = suggestion;
-  }
-
-  String get query => String.fromCharCodes(
-        _value.text.codeUnits.where((ch) => ch != kObjectReplacementChar),
-      );
+  bool _isNew = true;
+  Size size;
 
   @override
   void initState() {
     super.initState();
-    _chips.addAll(widget.initialValue);
-    _updateTextInputState();
+    _controller = widget.controller ?? ChipsInputController<T>(widget.findSuggestions);
+    _controller.enabled = widget.enabled;
+    if (widget.initialValue != null) {
+      _controller.addAll(widget.initialValue);
+    }
+
+    _controller.addListener(_onChanged);
+    _streams.add(_controller.queryStream.listen((query) {
+      _connection?.setEditingState(textEditingValue(_chipReplacementText + query));
+    }));
+
+    _streams.add(_controller.chipStream.listen((chips) {
+      _connection?.setEditingState(textEditingValue(_chipReplacementText + _controller.query));
+    }));
+
     _initFocusNode();
 
-    if (widget.onLostFocus != null) {
-      _focusNode.addListener(() {
-        if (!_focusNode.hasFocus) {
-          final result = widget.onLostFocus(query);
-          if (result != null) {
-            selectSuggestion(result);
-          }
-        }
-      });
+    if (widget.onSuggestionTap != null) {
+      _onSuggestionTap = TapGestureRecognizer()
+        ..onTap = () {
+          widget.onSuggestionTap(_controller.suggestion);
+        };
     }
-    this._suggestionsBoxController = _SuggestionsBoxController(context);
-    this._suggestionsStreamController = StreamController<List<T>>.broadcast();
-  }
-
-  @override
-  void didChangeDependencies() {
-    if (_isNew) {
-      _isNew = false;
-      if (widget.autofocus) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          requestKeyboard();
-        });
-      }
-    }
-    super.didChangeDependencies();
-  }
-
-  _resetFocusNode(FocusNode newFocusNode) {
-    if (newFocusNode != _focusNode) {
-      _focusNode?.dispose();
-      _focusNode = newFocusNode;
-    }
-  }
-
-  _initFocusNode() {
-    debugPrint("Initializing focus node");
-    if (widget.enabled) {
-      if (widget.maxChips == null || _chips.length < widget.maxChips) {
-        _resetFocusNode(widget.focusNode ?? FocusNode());
-        this._focusNode.addListener(_onFocusChanged);
-        (() async {
-          await this._initOverlayEntry();
-          // in case we already missed the focus event
-          if (this._focusNode.hasFocus) {
-            this._suggestionsBoxController.open();
-          }
-        })();
-      } else
-        _resetFocusNode(AlwaysDisabledFocusNode());
-    } else
-      _resetFocusNode(AlwaysDisabledFocusNode());
-    debugPrint(this._focusNode.toString());
-  }
-
-  void _onFocusChanged() {
-    if (_focusNode.hasFocus) {
-      _openInputConnection();
-      // if()
-      this._suggestionsBoxController.open();
-    } else {
-      _closeInputConnectionIfNeeded();
-      this._suggestionsBoxController.close();
-    }
-    setState(() {
-      /*rebuild so that _TextCursor is hidden.*/
-    });
-  }
-
-  Future<void> _initOverlayEntry() async {
-    RenderBox renderBox = context.findRenderObject();
-    // TODO: See if after_layout mixin (https://pub.dartlang.org/packages/after_layout) works instead of keep checking if rendered
-
-    while (renderBox == null) {
-      await Future.delayed(Duration(milliseconds: 10));
-
-      renderBox = context.findRenderObject();
-    }
-
-    while (!renderBox.hasSize) {
-      await Future.delayed(Duration(milliseconds: 10));
-    }
-
-    size = renderBox.size;
-
-    this._suggestionsBoxController._overlayEntry = OverlayEntry(
-      builder: (context) {
-        return StreamBuilder(
-          stream: _suggestionsStreamController.stream,
-          builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
-            if (snapshot.data != null && snapshot.data?.length != 0)
-              return Positioned(
-                width: size.width,
-                child: CompositedTransformFollower(
-                  link: this._layerLink,
-                  showWhenUnlinked: false,
-                  offset: Offset(0.0, size.height + 5.0),
-                  child: Material(
-                    elevation: 4.0,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: snapshot.data?.length ?? 0,
-                      itemBuilder: (BuildContext context, int index) {
-                        return widget.suggestionBuilder(context, this, _suggestions[index]);
-                      },
-                    ),
-                  ),
-                ),
-              );
-            else
-              return Container();
-          },
-        );
-      },
-    );
   }
 
   @override
   void dispose() {
-    if (widget.focusNode == null) {
-      _focusNode?.dispose();
+    _focusNodes.forEach((node) => node.dispose());
+    if (widget.controller == null) {
+      _controller.dispose();
     }
+    _streams.forEach((sub) => sub.cancel());
     _closeInputConnectionIfNeeded();
-    _suggestionsStreamController.close();
     super.dispose();
   }
 
-  bool requestKeyboard() {
+  _onChanged() {
+    setState(() {
+      if (widget.maxChips != null) _initFocusNode();
+    });
+    requestKeyboard(context);
+  }
+
+  int _countReplacements(String value) {
+    return value.codeUnits.where((ch) => ch == kObjectReplacementChar).length;
+  }
+
+  String get _chipReplacementText => String.fromCharCodes(_chips.expand((_) => [kObjectReplacementChar]));
+
+  TextEditingValue get _textValue => textEditingValue(_chipReplacementText + _query);
+
+  List<T> get _chips => _controller.chips;
+
+  String get _query => _controller.query ?? "";
+
+  /// Implemented from [TextInputClient]
+  @override
+  void performAction(TextInputAction action) {
+    if (widget.onInputAction != null) {
+      widget.onInputAction.call(action);
+    } else {
+      _focusNode.unfocus();
+    }
+  }
+
+  /// Implemented from [TextInputClient]
+  @override
+  void updateFloatingCursor(RawFloatingCursorPoint point) {
+    print(point);
+  }
+
+  /// Implemented from [TextInputClient].  This should never be called directly; instead, use the [_controller] to
+  /// set the editing value
+  @override
+  void updateEditingValue(TextEditingValue value) {
+    String newText = value.text;
+    if (newText.endsWith("\t")) {
+      setState(() {
+        widget.onInputAction?.call(TextInputAction.next);
+        _connection.setEditingState(_textValue);
+      });
+      return;
+    }
+    final oldCount = _chips.length;
+    final newCount = _countReplacements(newText);
+    if (newCount < oldCount) {
+      _controller.chips = _chips.take(newCount);
+    }
+
+    _controller.setQuery(
+      String.fromCharCodes(newText.codeUnits.where((c) => c != kObjectReplacementChar)),
+      publish: false,
+    );
+  }
+
+  void _openInputConnection() {
+    if (!hasInputConnection) {
+      _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
+      _connection.setEditingState(_textValue);
+    }
+    _connection.show();
+  }
+
+  void _closeInputConnectionIfNeeded() {
+    if (hasInputConnection) {
+      _connection.close();
+      _connection = null;
+    }
+  }
+
+  bool requestKeyboard(BuildContext context) {
     if (_focusNode == null) {
       return false;
     }
@@ -247,110 +218,118 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
     }
   }
 
-  void selectSuggestion(T data) {
-    setState(() {
-      _chips.add(data);
-      if (widget.maxChips != null) _initFocusNode();
-      _updateTextInputState();
-      _suggestions = null;
-      _suggestionsStreamController.add(_suggestions);
-    });
-    widget.onChanged(_chips.toList(growable: false));
-  }
-
-  void deleteChip(T data) {
-    if (widget.enabled) {
-      setState(() {
-        _chips.remove(data);
-        _updateTextInputState();
-      });
-      if (widget.maxChips != null) _initFocusNode();
-      widget.onChanged(_chips.toList(growable: false));
+  bool _resetFocusNode(FocusNode newFocusNode) {
+    if (newFocusNode != _focusNode) {
+      if (_focusNode != null) {
+        _focusNodes.add(_focusNode);
+      }
+      _focusNode = newFocusNode;
     }
+    return newFocusNode != _focusNode;
   }
 
-  bool syncChips(Iterable<T> newItems) {
-    bool changed = false;
-
+  _initFocusNode() {
     if (widget.enabled) {
-      setState(() {
-        try {
-          final currSize = this._chips.length;
-          final newList = newItems.toList();
-          for (var i = 0; i < newItems.length; i++) {
-            final newItem = newList[i];
-            if (_chips.length > i) {
-              if (_chips[i] != newItem) {
-                changed = true;
-                _chips.removeAt(i);
-                _chips.insert(i, newItem);
-              }
-            } else {
-              changed = true;
-              _chips.add(newItem);
-            }
-          }
-
-          for (var i = newItems.length; i < currSize; i++) {
-            _chips.removeAt(i);
-            changed = true;
-          }
-          return changed;
-        } catch (e) {
-          print("Error updating list state: $e");
-          throw e;
+      if (widget.maxChips == null || _chips.length < widget.maxChips) {
+        bool changed = _resetFocusNode(widget.focusNode ?? FocusNode());
+        if (changed) {
+          _focusNode.addListener(_onFocusChanged);
+          debugPrint(this._focusNode.toString());
         }
-      });
-    }
-    return changed;
-  }
-
-  void addChip(T data) {
-    if (widget.enabled) {
-      setState(() {
-        _chips.add(data);
-        _updateTextInputState();
-      });
-      if (widget.maxChips != null) _initFocusNode();
-      widget.onChanged(_chips.toList(growable: false));
+        _controller.open();
+      } else {
+        _resetFocusNode(AlwaysDisabledFocusNode());
+      }
+    } else {
+      _resetFocusNode(AlwaysDisabledFocusNode());
     }
   }
 
-  void _openInputConnection() {
-    if (!hasInputConnection) {
-      _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
-      _connection.setEditingState(_value);
+  void _onFocusChanged() {
+    if (_focusNode.hasFocus) {
+      _openInputConnection();
+      _controller.open();
+    } else {
+      _closeInputConnectionIfNeeded();
+      _controller.close();
     }
-    _connection.show();
+    setState(() {
+      /*rebuild so that _TextCursor is hidden.*/
+    });
   }
 
-  void _closeInputConnectionIfNeeded() {
-    if (hasInputConnection) {
-      _connection.close();
-      _connection = null;
+  @override
+  void afterFirstLayout(BuildContext context) {
+    final RenderBox box = context.findRenderObject();
+    size = box.size;
+    _controller.initialize(context, OverlayEntry(
+      builder: (context) {
+        return StreamBuilder(
+          stream: _controller.suggestionStream,
+          builder: (BuildContext context, AsyncSnapshot<ChipSuggestions<T>> snapshot) {
+            if (snapshot.data?.suggestions?.isNotEmpty == true) {
+              final _suggestions = snapshot.data.suggestions;
+              return Positioned(
+                width: size.width,
+                child: CompositedTransformFollower(
+                  link: this._layerLink,
+                  showWhenUnlinked: false,
+                  offset: Offset(0.0, size.height + 5.0),
+                  child: Material(
+                    elevation: 4.0,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: snapshot.data?.suggestions?.length ?? 0,
+                      itemBuilder: (BuildContext context, int index) {
+                        return widget.suggestionBuilder(context, _suggestions[index]);
+                      },
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              return Container();
+            }
+          },
+        );
+      },
+    ));
+
+    if (widget.autofocus == true) {
+      if (!requestKeyboard(context)) {
+        requestKeyboard(context);
+      }
     }
   }
 
   TextSpan get _textSpan {
+    final suggestionToken = _controller.suggestionToken;
+    final q = _query;
+    final _recognizer = suggestionToken != null ? _onSuggestionTap : null;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
-    final q = query;
-    return TextSpan(children: [
-      TextSpan(style: textTheme, text: q),
-      if (_suggestion?.toLowerCase()?.startsWith(q?.toLowerCase()) == true)
+    return TextSpan(
+      children: [
         TextSpan(
-          text: _suggestion.substring(q.length),
-          style: textTheme.copyWith(
-            color: textTheme.color.withOpacity(0.4),
-          ),
+          style: textTheme,
+          text: q,
+          recognizer: _recognizer,
         ),
-    ]);
+        if (suggestionToken != null)
+          TextSpan(
+            recognizer: _recognizer,
+            text: suggestionToken.substring(q.length),
+            style: textTheme.copyWith(
+              color: textTheme.color.withOpacity(0.4),
+            ),
+          ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    var chipsChildren =
-        _chips.map((data) => widget.chipBuilder(context, this, data)).where((data) => data != null).toList();
+    var chipsChildren = _chips.map((data) => widget.chipBuilder(context, data)).where((data) => data != null).toList();
 
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5, color: Colors.transparent);
@@ -364,31 +343,57 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                RichText(text: _textSpan),
+                Text(_query, style: textTheme),
+                _TextCaret(resumed: _focusNode.hasFocus),
               ],
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(query, style: textTheme),
-                _TextCaret(resumed: _focusNode.hasFocus),
+                RichText(text: _textSpan),
               ],
-            )
+            ),
           ],
         ),
       ),
     );
 
+    bool _deleting = false;
     return CompositedTransformTarget(
       link: this._layerLink,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: requestKeyboard,
+        onTap: () => requestKeyboard(context),
+        onPanEnd: (details) {
+          if (_deleting) {
+            _deleting = false;
+            // other way??
+            if (_controller.query.isNotEmpty == true) {
+              _controller.setQuery("");
+            } else if (_controller.size > 0) {
+              _controller.pop();
+            } else {
+              // Close the whole thing?
+              Navigator.pop(context);
+            }
+          }
+        },
+        onPanUpdate: (details) {
+          if (details.delta.dx > 0) {
+            _deleting = false;
+            // We are trying to select something
+            if (_controller.suggestion != null) {
+              _controller.acceptSuggestion();
+            }
+          } else if (details.delta.dx < 0) {
+            _deleting = true;
+          }
+        },
         child: InputDecorator(
           decoration: widget.decoration,
           isFocused: _focusNode.hasFocus,
-          isEmpty: _value.text.length == 0 && _chips.length == 0,
+          isEmpty: _query?.isNotEmpty != true && _chips.length == 0,
           child: Wrap(
             children: chipsChildren,
             spacing: 4.0,
@@ -397,69 +402,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>> implements TextInputClient
         ),
       ),
     );
-  }
-
-  int _countReplacements(TextEditingValue value) {
-    return value.text.codeUnits.where((ch) => ch == kObjectReplacementChar).length;
-  }
-
-  String get _chipReplacementText => String.fromCharCodes(_chips.expand((_) => [kObjectReplacementChar]));
-
-  void _updateTextInputState() {
-    _value = TextEditingValue(
-      text: "$_chipReplacementText",
-    );
-    if (_connection == null)
-      _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
-    _connection.setEditingState(_value);
-    requestKeyboard();
-  }
-
-  void _onSearchChanged(String value) async {
-    final localId = ++_searchId;
-    final ChipSuggestions results = await widget.findSuggestions(value);
-    if (_searchId == localId && mounted) {
-      if (results.match != null) {
-        selectSuggestion(results.match);
-      }
-      if (results.suggestions != null) {
-        setState(() =>
-            _suggestions = results.suggestions.where((profile) => !_chips.contains(profile))?.toList(growable: false));
-      }
-    }
-    _suggestionsStreamController.add(_suggestions);
-    widget.onQueryChanged?.call(value);
-  }
-
-  /// Implemented from [TextInputClient]
-  @override
-  void performAction(TextInputAction action) {
-    if (widget.onInputAction != null) {
-      widget.onInputAction.call(action, this);
-    } else {
-      _focusNode.unfocus();
-    }
-  }
-
-  /// Implemented from [TextInputClient]
-  @override
-  void updateFloatingCursor(RawFloatingCursorPoint point) {
-    print(point);
-  }
-
-  /// Implemented from [TextInputClient]
-  @override
-  void updateEditingValue(TextEditingValue value) {
-    final oldCount = _countReplacements(_value);
-    final newCount = _countReplacements(value);
-    setState(() {
-      if (newCount < oldCount) {
-        _chips = List.from(_chips.take(newCount));
-        widget.onChanged(_chips.toList(growable: false));
-      }
-      _value = value;
-    });
-    _onSearchChanged(query);
   }
 }
 
@@ -518,36 +460,9 @@ class _TextCursorState extends State<_TextCaret> with SingleTickerProviderStateM
   }
 }
 
-class _SuggestionsBoxController {
-  final BuildContext context;
+textEditingValue(String text) => TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
 
-  OverlayEntry _overlayEntry;
-
-  bool _isOpened = false;
-
-  _SuggestionsBoxController(this.context);
-
-  bool open() {
-    if (this._isOpened) return true;
-    if (this._overlayEntry != null) {
-      Overlay.of(context).insert(this._overlayEntry);
-      this._isOpened = true;
-      return true;
-    }
-    return false;
-  }
-
-  close() {
-    if (!this._isOpened) return;
-    this._overlayEntry?.remove();
-    this._isOpened = false;
-  }
-
-  toggle() {
-    if (this._isOpened) {
-      this.close();
-    } else {
-      this.open();
-    }
-  }
-}
+const kObjectReplacementChar = 0xFFFC;
