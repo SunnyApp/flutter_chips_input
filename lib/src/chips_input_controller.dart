@@ -68,7 +68,7 @@ class ChipsInputController<T> extends ChangeNotifier {
       _query = query;
       _queryStreamController.add(ChipInput(_query, userInput: userInput));
       notifyListeners();
-      _loadSuggestions();
+      Future.microtask(() => _loadSuggestions());
     }
   }
 
@@ -109,8 +109,10 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   void acceptSuggestion({T suggestion}) {
-    final _toAdd = suggestion ?? this._suggestion;
-    addChip(_toAdd, resetQuery: true);
+    if (suggestionToken != null) {
+      final _toAdd = suggestion ?? this._suggestion;
+      addChip(_toAdd, resetQuery: true);
+    }
   }
 
   void addChip(T data, {bool resetQuery = false}) {
