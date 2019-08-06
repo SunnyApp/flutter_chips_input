@@ -34,7 +34,16 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     controller = ChipsInputController<AppProfile>(_findSuggestions);
-    _textController.addListener(() => setState(() {}));
+    controller.queryStream.listen((query) {
+      _textController.text = query.text;
+    });
+//    _textController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override

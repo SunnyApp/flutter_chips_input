@@ -14,7 +14,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   String _suggestionToken;
   bool enabled = true;
   final StreamController<ChipSuggestions<T>> _suggestionsStreamController = StreamController.broadcast();
-  final StreamController<String> _queryStreamController = StreamController.broadcast();
+  final StreamController<ChipInput> _queryStreamController = StreamController.broadcast();
   final StreamController<Iterable<T>> _chipStream = StreamController.broadcast();
   final ChipTokenizer<T> tokenizer;
   OverlayEntry _overlayEntry;
@@ -49,7 +49,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   Stream<ChipSuggestions<T>> get suggestionStream => _suggestionsStreamController.stream;
-  Stream<String> get queryStream => _queryStreamController.stream;
+  Stream<ChipInput> get queryStream => _queryStreamController.stream;
   Stream<Iterable<T>> get chipStream => _chipStream.stream;
 
   List<T> get suggestions => List.from(_suggestions ?? [], growable: false);
@@ -63,12 +63,10 @@ class ChipsInputController<T> extends ChangeNotifier {
     notifyListeners();
   }
 
-  setQuery(String query, {bool publish = true}) {
+  setQuery(String query, {bool userInput = false}) {
     if (query != _query) {
       _query = query;
-      if (publish) {
-        _queryStreamController.add(query);
-      }
+      _queryStreamController.add(ChipInput(_query, userInput: userInput));
       notifyListeners();
       _loadSuggestions();
     }
@@ -174,7 +172,7 @@ class ChipsInputController<T> extends ChangeNotifier {
     _query = null;
     _suggestions = [];
     _suggestionsStreamController.add(ChipSuggestions.empty<T>());
-    _queryStreamController.add("");
+    _queryStreamController.add(ChipInput("", userInput: false));
     notifyListeners();
   }
 
@@ -229,3 +227,11 @@ class ChipsInputController<T> extends ChangeNotifier {
 }
 
 enum ControllerStatus { open, closed, opening }
+
+/// Helps to detect input that came from the user's keyboard so we don't infinitely update the text box
+class ChipInput {
+  final String text;
+  final bool userInput;
+
+  ChipInput(this.text, {this.userInput});
+}
