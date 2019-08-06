@@ -122,6 +122,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   @override
   void dispose() {
+    _controller.removeListener(_onChanged);
     _focusNodes.forEach((node) => node.dispose());
     if (widget.controller == null) {
       _controller.dispose();
@@ -132,9 +133,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   }
 
   _onChanged() {
-    setState(() {
-      if (widget.maxChips != null) _initFocusNode();
-    });
+    if (widget.maxChips != null) _initFocusNode();
     requestKeyboard(context);
   }
 
