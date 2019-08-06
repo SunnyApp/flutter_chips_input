@@ -38,7 +38,6 @@ class ChipsInput<T> extends StatefulWidget {
     this.inputConfiguration,
     this.autofocus,
     this.focusNode,
-    this.onQueryChanged,
     this.onInputAction,
 
     /// When an inline suggestion is present and tapped.
@@ -59,7 +58,6 @@ class ChipsInput<T> extends StatefulWidget {
   /// Callback to generate suggestions.  This is only used when _not_ providing a [controller]
   final GenerateSuggestions findSuggestions;
 
-  final ValueChanged<String> onQueryChanged;
   final ValueChanged<T> onChipTapped;
   final BuildChipsWidget<T> chipBuilder;
   final BuildChipsWidget<T> suggestionBuilder;
