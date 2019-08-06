@@ -88,8 +88,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   // A list of focus nodes we've used that need to be disposed
   List<FocusNode> _focusNodes = [];
-
-  bool _isNew = true;
   Size size;
 
   @override
@@ -133,7 +131,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   }
 
   _onChanged() {
-    if (widget.maxChips != null) _initFocusNode();
+    setState(() {
+      if (widget.maxChips != null) _initFocusNode();
+    });
+
     requestKeyboard(context);
   }
 
@@ -271,7 +272,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
               return Positioned(
                 width: size.width,
                 child: CompositedTransformFollower(
-                  link: this._layerLink,
+                  link: _layerLink,
                   showWhenUnlinked: false,
                   offset: Offset(0.0, size.height + 5.0),
                   child: Material(
@@ -360,7 +361,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
     bool _deleting = false;
     return CompositedTransformTarget(
-      link: this._layerLink,
+      link: _layerLink,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => requestKeyboard(context),
