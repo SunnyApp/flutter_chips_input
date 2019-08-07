@@ -60,12 +60,17 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   set suggestion(T suggestion) {
     _suggestion = suggestion;
+    if (suggestion != null) {
+      _suggestionToken = tokenizer(suggestion)?.firstWhere(
+        (s) => s.toLowerCase().startsWith(query.toLowerCase()),
+        orElse: () => null,
+      );
+    }
     notifyListeners();
   }
 
   set suggestions(Iterable<T> suggestions) {
-    _suggestions.clear();
-    _suggestions.addAll(suggestions);
+    _suggestions = suggestions;
 
     _calculateFirstSuggestion();
     _suggestionsStreamController.add(ChipSuggestions(suggestions: suggestions));
@@ -122,9 +127,13 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   void acceptSuggestion({T suggestion}) {
-    if (suggestionToken != null) {
+    if (suggestionToken != null && query?.isNotEmpty == true) {
       final _toAdd = suggestion ?? this._suggestion;
-      addChip(_toAdd, resetQuery: true);
+      _suggestion = null;
+      _suggestionToken = null;
+      if (_toAdd != null) {
+        addChip(_toAdd, resetQuery: true);
+      }
     }
   }
 
