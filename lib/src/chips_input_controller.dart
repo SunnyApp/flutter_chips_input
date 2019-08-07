@@ -63,6 +63,15 @@ class ChipsInputController<T> extends ChangeNotifier {
     notifyListeners();
   }
 
+  set suggestions(Iterable<T> suggestions) {
+    _suggestions.clear();
+    _suggestions.addAll(suggestions);
+
+    _calculateFirstSuggestion();
+    _suggestionsStreamController.add(ChipSuggestions(suggestions: suggestions));
+    notifyListeners();
+  }
+
   setQuery(String query, {bool userInput = false}) {
     if (query != _query) {
       _query = query;
@@ -78,20 +87,24 @@ class ChipsInputController<T> extends ChangeNotifier {
     if (results.match != null) {
       _suggestion = results.match;
     } else {
-      // Looks for the first suggestion that actually matches what the user is typing so we
-      // can add an inline suggestion
-      final allTokens = _suggestions.expand((chip) {
-        return tokenizer(chip).where((token) => token != null).toSet().map((token) => MapEntry(chip, token));
-      });
-      final matchingToken = allTokens.firstWhere((entry) {
-        return entry.value.toLowerCase().startsWith(query.toLowerCase());
-      }, orElse: () => null);
-
-      _suggestion = matchingToken?.key;
-      _suggestionToken = matchingToken?.value;
+      _calculateFirstSuggestion();
     }
     _suggestionsStreamController.add(results);
     notifyListeners();
+  }
+
+  _calculateFirstSuggestion() {
+    // Looks for the first suggestion that actually matches what the user is typing so we
+    // can add an inline suggestion
+    final allTokens = _suggestions.expand((chip) {
+      return tokenizer(chip).where((token) => token != null).toSet().map((token) => MapEntry(chip, token));
+    });
+    final matchingToken = allTokens.firstWhere((entry) {
+      return entry.value.toLowerCase().startsWith(query.toLowerCase());
+    }, orElse: () => null);
+
+    _suggestion = matchingToken?.key;
+    _suggestionToken = matchingToken?.value;
   }
 
   void removeAt(int index) {
