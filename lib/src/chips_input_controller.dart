@@ -202,6 +202,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   void pop() {
     _chips.removeLast();
+    _chipStream.add(List.from(_chips, growable: false));
     notifyListeners();
   }
 
