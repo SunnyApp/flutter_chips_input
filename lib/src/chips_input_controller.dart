@@ -66,7 +66,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   setQuery(String query, {bool userInput = false}) {
     if (query != _query) {
       _query = query;
-      _queryStreamController.add(ChipInput(_query, userInput: userInput));
+      _queryStreamController.add(ChipInput(query, userInput: userInput));
       notifyListeners();
       Future.microtask(() => _loadSuggestions());
     }

@@ -99,13 +99,15 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
     _controller.addListener(_onChanged);
     _streams.add(_controller.queryStream.listen((query) {
-      if (!query.userInput) {
+      if (!query.userInput && _connection?.attached == true) {
         _connection?.setEditingState(textEditingValue(_chipReplacementText + query.text));
       }
     }));
 
     _streams.add(_controller.chipStream.listen((chips) {
-      _connection?.setEditingState(textEditingValue(_chipReplacementText + _controller.query));
+      if (_connection?.attached == true) {
+        _connection?.setEditingState(textEditingValue(_chipReplacementText + _controller.query));
+      }
     }));
 
     _initFocusNode();
