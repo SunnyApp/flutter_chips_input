@@ -49,7 +49,9 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   Stream<ChipSuggestions<T>> get suggestionStream => _suggestionsStreamController.stream;
+
   Stream<ChipInput> get queryStream => _queryStreamController.stream;
+
   Stream<Iterable<T>> get chipStream => _chipStream.stream;
 
   List<T> get suggestions => List.from(_suggestions ?? [], growable: false);
@@ -72,7 +74,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   set suggestions(Iterable<T> suggestions) {
     _suggestions = suggestions;
 
-    _calculateFirstSuggestion();
+    calculateInlineSuggestion(_suggestions);
     _suggestionsStreamController.add(ChipSuggestions(suggestions: suggestions));
     notifyListeners();
   }
@@ -92,13 +94,13 @@ class ChipsInputController<T> extends ChangeNotifier {
     if (results.match != null) {
       _suggestion = results.match;
     } else {
-      _calculateFirstSuggestion();
+      calculateInlineSuggestion(_suggestions);
     }
     _suggestionsStreamController.add(results);
     notifyListeners();
   }
 
-  _calculateFirstSuggestion() {
+  calculateInlineSuggestion(Iterable<T> _suggestions, {bool notify = false}) {
     // Looks for the first suggestion that actually matches what the user is typing so we
     // can add an inline suggestion
     final allTokens = _suggestions.expand((chip) {
@@ -110,6 +112,9 @@ class ChipsInputController<T> extends ChangeNotifier {
 
     _suggestion = matchingToken?.key;
     _suggestionToken = matchingToken?.value;
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   void removeAt(int index) {
