@@ -78,14 +78,11 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   FocusNode _focusNode;
   TextInputConnection _connection;
   LayerLink _layerLink = LayerLink();
-
   List<StreamSubscription> _streams = [];
 
   bool get hasInputConnection => _connection != null && _connection.attached;
   GestureRecognizer _onSuggestionTap;
 
-  // A list of focus nodes we've used that need to be disposed
-  List<FocusNode> _focusNodes = [];
   Size size;
 
   @override
@@ -110,7 +107,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       }
     }));
 
-    _initFocusNode();
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_onFocusChanged);
 
     if (widget.onSuggestionTap != null) {
       _onSuggestionTap = TapGestureRecognizer()
@@ -123,9 +121,11 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   @override
   void dispose() {
     _controller.removeListener(_onChanged);
-    _focusNodes.forEach((node) => node.dispose());
     if (widget.controller == null) {
       _controller.dispose();
+    }
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
     }
     _streams.forEach((sub) => sub.cancel());
     _closeInputConnectionIfNeeded();
@@ -133,11 +133,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   }
 
   _onChanged() {
-    setState(() {
-      if (widget.maxChips != null) _initFocusNode();
-    });
-
-    requestKeyboard(context);
+    setState(() {});
   }
 
   int _countReplacements(String value) {
@@ -199,48 +195,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     }
   }
 
-  bool requestKeyboard(BuildContext context) {
-    if (_focusNode == null) {
-      return false;
-    }
-    if (_focusNode?.hasFocus == true) {
-      _openInputConnection();
-      return true;
-    } else {
-      FocusScope.of(context).requestFocus(_focusNode);
-      return false;
-    }
+  requestKeyboard(BuildContext context) {
+    FocusScope.of(context).requestFocus(_focusNode);
   }
 
-  bool _resetFocusNode(FocusNode newFocusNode) {
-    if (newFocusNode != _focusNode) {
-      if (_focusNode != null) {
-        _focusNodes.add(_focusNode);
-      }
-      _focusNode = newFocusNode;
-    }
-    return newFocusNode != _focusNode;
-  }
-
-  _initFocusNode() {
-    if (widget.enabled) {
-      if (widget.maxChips == null || _chips.length < widget.maxChips) {
-        bool changed = _resetFocusNode(widget.focusNode ?? FocusNode());
-        if (changed) {
-          _focusNode.addListener(_onFocusChanged);
-          debugPrint(this._focusNode.toString());
-        }
-        _controller.open();
-      } else {
-        _resetFocusNode(AlwaysDisabledFocusNode());
-      }
-    } else {
-      _resetFocusNode(AlwaysDisabledFocusNode());
-    }
-  }
+  bool get _canFocus => widget.maxChips == null || _chips.length < widget.maxChips;
 
   void _onFocusChanged() {
-    if (_focusNode.hasFocus) {
+    if (_focusNode.hasFocus && _canFocus) {
       _openInputConnection();
       _controller.open();
     } else {
@@ -290,9 +252,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     ));
 
     if (widget.autofocus == true) {
-      if (!requestKeyboard(context)) {
-        requestKeyboard(context);
-      }
+      FocusScope.of(context).requestFocus(_focusNode);
     }
   }
 
@@ -397,11 +357,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       ),
     );
   }
-}
-
-class AlwaysDisabledFocusNode extends FocusNode {
-  @override
-  bool get hasFocus => false;
 }
 
 class _TextCaret extends StatefulWidget {
