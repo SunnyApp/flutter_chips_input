@@ -30,9 +30,8 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   List<T> get chips => List.from(_chips, growable: false);
 
-  get suggestionToken => (query.isNotEmpty && _suggestionToken != null && query.length < _suggestionToken?.length)
-      ? _suggestionToken
-      : null;
+  get suggestionToken =>
+      (_suggestionToken != null && query.length < _suggestionToken?.length) ? _suggestionToken : null;
 
   int get size => _chips.length;
 
@@ -110,15 +109,20 @@ class ChipsInputController<T> extends ChangeNotifier {
   calculateInlineSuggestion(Iterable<T> _suggestions, {bool notify = false}) {
     // Looks for the first suggestion that actually matches what the user is typing so we
     // can add an inline suggestion
-    final allTokens = _suggestions.expand((chip) {
-      return tokenizer(chip).where((token) => token != null).toSet().map((token) => MapEntry(chip, token));
-    });
-    final matchingToken = allTokens.firstWhere((entry) {
-      return entry.value.toLowerCase().startsWith(query.toLowerCase());
-    }, orElse: () => null);
+    if (query.isEmpty) {
+      _suggestion = null;
+      _suggestionToken = null;
+    } else {
+      final allTokens = _suggestions.expand((chip) {
+        return tokenizer(chip).where((token) => token != null).toSet().map((token) => MapEntry(chip, token));
+      });
+      final matchingToken = allTokens.firstWhere((entry) {
+        return entry.value.toLowerCase().startsWith(query.toLowerCase());
+      }, orElse: () => null);
 
-    _suggestion = matchingToken?.key;
-    _suggestionToken = matchingToken?.value;
+      _suggestion = matchingToken?.key;
+      _suggestionToken = matchingToken?.value;
+    }
     if (notify) {
       notifyListeners();
     }
