@@ -275,7 +275,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
             text: q,
             recognizer: _recognizer,
           ),
-        if (suggestionToken?.startsWith(_query) == true)
+        if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true)
           TextSpan(
             recognizer: _recognizer,
             text: suggestionToken.substring(q.length),
