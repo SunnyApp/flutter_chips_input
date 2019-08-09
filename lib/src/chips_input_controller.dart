@@ -156,7 +156,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   void acceptSuggestion({T suggestion}) {
-    if (suggestionToken != null && query?.isNotEmpty == true) {
+    if (suggestionToken != null) {
       final _toAdd = suggestion ?? this._suggestion;
       _suggestion = null;
       _suggestionToken = null;
