@@ -35,8 +35,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   List<T> get chips => List.from(_chips, growable: false);
 
-  get suggestionToken =>
-      (_suggestionToken != null && query.length < _suggestionToken?.length) ? _suggestionToken : null;
+  String get suggestionToken => _suggestionToken;
 
   int get size => _chips.length;
 

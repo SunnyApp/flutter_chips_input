@@ -188,6 +188,14 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             MaterialButton(
               elevation: 1,
+              color: Colors.orange,
+              onPressed: () {
+                controller2.setInlineSuggestion(mockResults[4], notify: true);
+              },
+              child: Text("Set Suggestion"),
+            ),
+            MaterialButton(
+              elevation: 1,
               color: Colors.green,
               onPressed: () {
                 controller.syncChips([

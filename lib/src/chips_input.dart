@@ -269,12 +269,13 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
     return TextSpan(
       children: [
-        TextSpan(
-          style: textTheme,
-          text: q,
-          recognizer: _recognizer,
-        ),
-        if (suggestionToken != null)
+        if (_query.isNotEmpty)
+          TextSpan(
+            style: textTheme,
+            text: q,
+            recognizer: _recognizer,
+          ),
+        if (suggestionToken?.startsWith(_query) == true)
           TextSpan(
             recognizer: _recognizer,
             text: suggestionToken.substring(q.length),
