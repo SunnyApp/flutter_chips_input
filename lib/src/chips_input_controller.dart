@@ -124,6 +124,14 @@ class ChipsInputController<T> extends ChangeNotifier {
     }
   }
 
+  setInlineSuggestion(T suggestion, {String suggestionToken, bool notify = false}) {
+    _suggestion = suggestion;
+    _suggestionToken = suggestionToken;
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
   void removeAt(int index) {
     _chips.removeAt(index);
     _chipStream.add(List.from(_chips, growable: false));
