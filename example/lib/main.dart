@@ -29,11 +29,16 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _textController = TextEditingController();
   final GlobalKey<ChipsInputState<AppProfile>> key = GlobalKey();
   ChipsInputController<AppProfile> controller;
+  ChipsInputController<AppProfile> controller2;
 
   @override
   void initState() {
     super.initState();
     controller = ChipsInputController<AppProfile>(_findSuggestions);
+    controller2 = ChipsInputController<AppProfile>(
+      _findSuggestions,
+      hideSuggestionOverlay: true,
+    );
     controller.queryStream.listen((query) {
       _textController.text = query.text;
     });
@@ -56,13 +61,65 @@ class _MyHomePageState extends State<MyHomePage> {
         padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             ChipsInput<AppProfile>(
               initialValue: [
                 AppProfile(
                     'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
               controller: controller,
+              placeholder: "Search contacts",
+              autofocus: true,
+              enabled: true,
+              maxChips: 5,
+              chipTokenizer: (profile) => [profile.name, profile.email].where((token) => token != null),
+              onSuggestionTap: (chip) {
+                controller.addChip(chip, resetQuery: true);
+              },
+              onInputAction: (_) {
+                if (controller.suggestion != null) {
+                  controller.addChip(controller.suggestion, resetQuery: true);
+                }
+              },
+              inputConfiguration: TextInputConfiguration(
+                autocorrect: false,
+              ),
+              decoration: InputDecoration(
+                // prefixIcon: Icon(Icons.search),
+                // hintText: formControl.hint,
+                labelText: "Select People",
+                // enabled: false,
+                // errorText: field.errorText,
+              ),
+              chipBuilder: (context, profile) {
+                return InputChip(
+                  key: ObjectKey(profile),
+                  label: Text(profile.name),
+                  avatar: CircleAvatar(
+                    backgroundImage: NetworkImage(profile.imageUrl),
+                  ),
+                  onDeleted: () => controller.deleteChip(profile),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                );
+              },
+              suggestionBuilder: (context, profile) {
+                return ListTile(
+                  key: ObjectKey(profile),
+                  leading: CircleAvatar(
+                    backgroundImage: NetworkImage(profile.imageUrl),
+                  ),
+                  title: Text(profile.name),
+                  subtitle: Text(profile.email),
+                  onTap: () => controller.addChip(profile, resetQuery: true),
+                );
+              },
+            ),
+            ChipsInput<AppProfile>(
+              initialValue: [
+                AppProfile(
+                    'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
+              ],
+              controller: controller2,
               placeholder: "Search contacts",
               autofocus: true,
               enabled: true,

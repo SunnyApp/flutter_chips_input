@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:after_layout/after_layout.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input_controller.dart';
-import 'package:after_layout/after_layout.dart';
 
 /// Generates a list of suggestions given a query
 typedef GenerateSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
@@ -40,6 +40,7 @@ class ChipsInput<T> extends StatefulWidget {
     this.autofocus,
     this.focusNode,
     this.onInputAction,
+    this.hideSuggestionsOverlay,
 
     /// When an inline suggestion is present and tapped.
     this.onSuggestionTap,
@@ -70,6 +71,7 @@ class ChipsInput<T> extends StatefulWidget {
   final TextInputConfiguration inputConfiguration;
   final PerformTextInputAction<T> onInputAction;
   final ChipAction<T> onSuggestionTap;
+  final bool hideSuggestionsOverlay;
 
   @override
   ChipsInputState<T> createState() => ChipsInputState<T>();
@@ -92,6 +94,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     super.initState();
     _controller = widget.controller ?? ChipsInputController<T>(widget.findSuggestions);
     _controller.enabled = widget.enabled;
+    _controller.hideSuggestionOverlay ??= widget.hideSuggestionsOverlay;
     if (widget.initialValue != null) {
       _controller.addAll(widget.initialValue);
     }

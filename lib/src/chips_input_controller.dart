@@ -21,11 +21,16 @@ class ChipsInputController<T> extends ChangeNotifier {
   OverlayEntry _overlayEntry;
   BuildContext _context;
 
+  bool hideSuggestionOverlay;
+
   ControllerStatus get status => _status;
   String get placeholder => _placeholder;
 
-  ChipsInputController(this.findSuggestions, {ChipTokenizer<T> tokenizer})
-      : assert(findSuggestions != null),
+  ChipsInputController(
+    this.findSuggestions, {
+    ChipTokenizer<T> tokenizer,
+    this.hideSuggestionOverlay = false,
+  })  : assert(findSuggestions != null),
         tokenizer = tokenizer ?? ((t) => ["$t"]);
 
   List<T> get chips => List.from(_chips, growable: false);
@@ -231,7 +236,9 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   initialize(BuildContext context, OverlayEntry entry) {
-    _overlayEntry = entry;
+    if (!hideSuggestionOverlay) {
+      _overlayEntry = entry;
+    }
     _context = context;
     if (_status == ControllerStatus.opening) {
       _status = ControllerStatus.closed;
@@ -240,6 +247,9 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   bool open() {
+    if (hideSuggestionOverlay) {
+      return false;
+    }
     switch (_status) {
       case ControllerStatus.open:
         return true;
@@ -261,12 +271,18 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   close() {
+    if (hideSuggestionOverlay) {
+      return;
+    }
     if (_status != ControllerStatus.open) return;
     this._overlayEntry?.remove();
     this._status = ControllerStatus.closed;
   }
 
   toggle(BuildContext context) {
+    if (hideSuggestionOverlay) {
+      return;
+    }
     if (_status != ControllerStatus.closed) {
       this.close();
     } else {
