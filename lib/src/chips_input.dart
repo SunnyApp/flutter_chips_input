@@ -316,7 +316,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
                 RichText(text: _textSpan),
               ],
             ),
-            if (_query?.trim()?.isNotEmpty != true && _controller.placeholder?.isNotEmpty == true)
+            if (_query.trim().isEmpty && _controller.suggestion == null && _controller.placeholder?.isNotEmpty == true)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
