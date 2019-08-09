@@ -32,6 +32,7 @@ class ChipsInput<T> extends StatefulWidget {
     @required this.chipBuilder,
     this.suggestionBuilder,
     this.findSuggestions,
+    this.placeholder,
     this.chipTokenizer,
     this.onChipTapped,
     this.maxChips,
@@ -54,6 +55,7 @@ class ChipsInput<T> extends StatefulWidget {
   final ChipsInputController<T> controller;
   final InputDecoration decoration;
   final bool enabled;
+  final String placeholder;
 
   /// Callback to generate suggestions.  This is only used when _not_ providing a [controller]
   final GenerateSuggestions findSuggestions;
@@ -93,7 +95,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     if (widget.initialValue != null) {
       _controller.addAll(widget.initialValue);
     }
-
+    _controller.placeholder = widget.placeholder;
     _controller.addListener(_onChanged);
     _streams.add(_controller.queryStream.listen((query) {
       if (!query.userInput && _connection?.attached == true) {
@@ -286,7 +288,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     var chipsChildren = _chips.map((data) => widget.chipBuilder(context, data)).where((data) => data != null).toList();
 
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme.subhead.copyWith(height: 1.5, color: Colors.transparent);
+    final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
+    final transparentText = textTheme.copyWith(color: Colors.transparent);
+    final placeholder = textTheme.copyWith(color: textTheme.color.withOpacity(0.4));
+
     chipsChildren.add(
       Container(
         height: 32.0,
@@ -297,7 +302,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(_query, style: textTheme),
+                Text(_query, style: transparentText),
                 _TextCaret(resumed: _focusNode.hasFocus),
               ],
             ),
@@ -308,6 +313,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
                 RichText(text: _textSpan),
               ],
             ),
+            if (_query?.trim()?.isNotEmpty != true && _controller.placeholder?.isNotEmpty == true)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(_controller.placeholder, style: placeholder),
+                ],
+              ),
           ],
         ),
       ),

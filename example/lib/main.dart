@@ -63,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
               controller: controller,
+              placeholder: "Search contacts",
               autofocus: true,
               enabled: true,
               maxChips: 5,

@@ -12,6 +12,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   T _suggestion;
   ControllerStatus _status = ControllerStatus.closed;
   String _suggestionToken;
+  String _placeholder;
   bool enabled = true;
   final StreamController<ChipSuggestions<T>> _suggestionsStreamController = StreamController.broadcast();
   final StreamController<ChipInput> _queryStreamController = StreamController.broadcast();
@@ -21,6 +22,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   BuildContext _context;
 
   ControllerStatus get status => _status;
+  String get placeholder => _placeholder;
 
   ChipsInputController(this.findSuggestions, {ChipTokenizer<T> tokenizer})
       : assert(findSuggestions != null),
@@ -33,6 +35,11 @@ class ChipsInputController<T> extends ChangeNotifier {
       : null;
 
   int get size => _chips.length;
+
+  set placeholder(String placeholder) {
+    this._placeholder = placeholder;
+    notifyListeners();
+  }
 
   set chips(Iterable<T> chips) {
     _chips.clear();
