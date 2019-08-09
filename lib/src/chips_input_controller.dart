@@ -126,7 +126,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   setInlineSuggestion(T suggestion, {String suggestionToken, bool notify = false}) {
     _suggestion = suggestion;
-    _suggestionToken = suggestionToken;
+    _suggestionToken = suggestionToken ?? tokenizer(suggestion).first;
     if (notify) {
       notifyListeners();
     }
