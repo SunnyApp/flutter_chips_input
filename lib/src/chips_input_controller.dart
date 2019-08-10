@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
@@ -183,7 +184,8 @@ class ChipsInputController<T> extends ChangeNotifier {
       try {
         final currSize = this._chips.length;
         final newList = newChips.toList();
-        for (var i = 0; i < newChips.length; i++) {
+        var i = 0;
+        for (; i < newChips.length; i++) {
           final newItem = newList[i];
           if (_chips.length > i) {
             if (_chips[i] != newItem) {
@@ -197,8 +199,9 @@ class ChipsInputController<T> extends ChangeNotifier {
           }
         }
 
-        for (var i = newChips.length; i < currSize; i++) {
-          _chips.removeAt(i);
+        final trimSize = currSize - i;
+        if (trimSize > 0) {
+          Iterable.generate(trimSize).forEach((_) => _chips.removeLast());
           changed = true;
         }
       } catch (e) {

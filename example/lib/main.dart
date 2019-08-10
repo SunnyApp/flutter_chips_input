@@ -169,40 +169,59 @@ class _MyHomePageState extends State<MyHomePage> {
               enabled: false,
               controller: _textController,
             ),
-            MaterialButton(
-              elevation: 1,
-              color: Colors.orange,
-              onPressed: () {
-                controller.setQuery("");
-              },
-              child: Text("Reset Search"),
-            ),
-            MaterialButton(
-              elevation: 1,
-              color: Colors.blue,
-              onPressed: () {
-                controller.setQuery("Bill");
-              },
-              child: Text("Set Query"),
-            ),
-            MaterialButton(
-              elevation: 1,
-              color: Colors.orange,
-              onPressed: () {
-                controller2.setInlineSuggestion(mockResults[4], notify: true);
-              },
-              child: Text("Set Suggestion"),
-            ),
-            MaterialButton(
-              elevation: 1,
-              color: Colors.green,
-              onPressed: () {
-                controller.syncChips([
-                  mockResults[3],
-                  mockResults[7],
-                ]);
-              },
-              child: Text("Set Chips"),
+            Wrap(
+              spacing: 5,
+              children: [
+                MaterialButton(
+                  elevation: 1,
+                  color: Colors.orange,
+                  onPressed: () {
+                    controller.setQuery("");
+                  },
+                  child: Text("Reset Search"),
+                ),
+                MaterialButton(
+                  elevation: 1,
+                  color: Colors.blue,
+                  onPressed: () {
+                    controller.setQuery("Bill");
+                  },
+                  child: Text("Set Query"),
+                ),
+                MaterialButton(
+                  elevation: 1,
+                  color: Colors.orange,
+                  onPressed: () {
+                    controller2.setInlineSuggestion(mockResults[4], notify: true);
+                  },
+                  child: Text("Set Suggestion"),
+                ),
+                MaterialButton(
+                  elevation: 1,
+                  color: Colors.green,
+                  onPressed: () {
+                    controller.syncChips([
+                      mockResults[3],
+                      mockResults[7],
+                    ]);
+                  },
+                  child: Text("Set Chips"),
+                ),
+                MaterialButton(
+                  elevation: 1,
+                  color: Colors.green,
+                  onPressed: () {
+                    controller.syncChips([
+                      mockResults[3],
+                      mockResults[7],
+                      mockResults[6],
+                      mockResults[2],
+                      mockResults[7],
+                    ]);
+                  },
+                  child: Text("Set Chips Long"),
+                )
+              ],
             ),
           ],
         ),
