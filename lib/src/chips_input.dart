@@ -11,7 +11,8 @@ import 'package:flutter_chips_input_sunny/src/chips_input_controller.dart';
 typedef GenerateSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
 
 /// Builds a widget for a chip.  Used for autocomplete and chips
-typedef BuildChipsWidget<T> = Widget Function(BuildContext context, T data);
+typedef BuildChipsWidget<T> = Widget Function(
+    BuildContext context, ChipsInputController<T> controller, int index, T data);
 
 /// An action that's executed when the user clicks the keyboard action
 typedef PerformTextInputAction<T> = void Function(TextInputAction type);
@@ -21,6 +22,15 @@ typedef ChipTokenizer<T> = Iterable<String> Function(T input);
 
 /// Generic action performed on a chip
 typedef ChipAction<T> = void Function(T chip);
+
+/// Simple callback for query changing.
+typedef QueryChanged<T> = void Function(String query, ChipsInputController<T> controller);
+
+/// Simple callback for query changing.
+typedef ChipsChanged<T> = void Function(ChipsInputController<T> controller);
+
+/// Simple callback for query changing.
+typedef OnLostFocus<T> = void Function(ChipsInputController<T> controller);
 
 // ignore: must_be_immutable
 class ChipsInput<T> extends StatefulWidget {
@@ -35,6 +45,9 @@ class ChipsInput<T> extends StatefulWidget {
     this.placeholder,
     this.chipTokenizer,
     this.onChipTapped,
+    this.onQueryChanged,
+    this.onLostFocus,
+    this.onChipsChanged,
     this.maxChips,
     this.inputConfiguration,
     this.autofocus,
@@ -57,6 +70,9 @@ class ChipsInput<T> extends StatefulWidget {
   final InputDecoration decoration;
   final bool enabled;
   final String placeholder;
+  final QueryChanged<T> onQueryChanged;
+  final OnLostFocus<T> onLostFocus;
+  final ChipsChanged<T> onChipsChanged;
 
   /// Callback to generate suggestions.  This is only used when _not_ providing a [controller]
   final GenerateSuggestions findSuggestions;
@@ -104,12 +120,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       if (!query.userInput && _connection?.attached == true) {
         _connection?.setEditingState(textEditingValue(_chipReplacementText + query.text));
       }
+      widget.onQueryChanged?.call(query.text, _controller);
     }));
 
     _streams.add(_controller.chipStream.listen((chips) {
       if (_connection?.attached == true) {
         _connection?.setEditingState(textEditingValue(_chipReplacementText + _controller.query));
       }
+      widget.onChipsChanged?.call(_controller);
     }));
 
     _focusNode = widget.focusNode ?? FocusNode();
@@ -213,6 +231,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     } else {
       _closeInputConnectionIfNeeded();
       _controller.close();
+      widget.onLostFocus?.call(_controller);
     }
     setState(() {
       /*rebuild so that _TextCursor is hidden.*/
@@ -242,7 +261,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
                       shrinkWrap: true,
                       itemCount: snapshot.data?.suggestions?.length ?? 0,
                       itemBuilder: (BuildContext context, int index) {
-                        return widget.suggestionBuilder(context, _suggestions[index]);
+                        return widget.suggestionBuilder(context, _controller, index, _suggestions[index]);
                       },
                     ),
                   ),
@@ -289,7 +308,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   @override
   Widget build(BuildContext context) {
-    var chipsChildren = _chips.map((data) => widget.chipBuilder(context, data)).where((data) => data != null).toList();
+    var chipsChildren = _chips
+        .asMap()
+        .map((index, data) => MapEntry(index, widget.chipBuilder(context, _controller, index, data)))
+        .values
+        .where((data) => data != null)
+        .toList();
 
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);

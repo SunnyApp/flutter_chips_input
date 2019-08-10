@@ -6,11 +6,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ccea7879-7873-4656-9a21-d45675016680" name="Default" comment="Adding placeholder">
+    <list default="true" id="ccea7879-7873-4656-9a21-d45675016680" name="Default" comment="Matching case">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/example/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/main.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/chips_input.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/chips_input.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/src/chips_input_controller.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/chips_input_controller.dart" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -151,7 +150,14 @@
       <option name="project" value="LOCAL" />
       <updated>1565339876758</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Matching case">
+      <created>1565380746528</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1565380746528</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -174,7 +180,8 @@
     <MESSAGE value="Trying to fix listeners" />
     <MESSAGE value="Check if connection is attached first" />
     <MESSAGE value="Adding placeholder" />
-    <option name="LAST_COMMIT_MESSAGE" value="Adding placeholder" />
+    <MESSAGE value="Matching case" />
+    <option name="LAST_COMMIT_MESSAGE" value="Matching case" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

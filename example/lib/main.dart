@@ -42,7 +42,6 @@ class _MyHomePageState extends State<MyHomePage> {
     controller.queryStream.listen((query) {
       _textController.text = query.text;
     });
-//    _textController.addListener(() => setState(() {}));
   }
 
   @override
@@ -91,7 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 // enabled: false,
                 // errorText: field.errorText,
               ),
-              chipBuilder: (context, profile) {
+              chipBuilder: (context, _, index, profile) {
                 return InputChip(
                   key: ObjectKey(profile),
                   label: Text(profile.name),
@@ -102,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
               },
-              suggestionBuilder: (context, profile) {
+              suggestionBuilder: (context, _, index, profile) {
                 return ListTile(
                   key: ObjectKey(profile),
                   leading: CircleAvatar(
@@ -143,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 // enabled: false,
                 // errorText: field.errorText,
               ),
-              chipBuilder: (context, profile) {
+              chipBuilder: (context, _, index, profile) {
                 return InputChip(
                   key: ObjectKey(profile),
                   label: Text(profile.name),
@@ -154,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
               },
-              suggestionBuilder: (context, profile) {
+              suggestionBuilder: (context, _, index, profile) {
                 return ListTile(
                   key: ObjectKey(profile),
                   leading: CircleAvatar(
