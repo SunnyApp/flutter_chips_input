@@ -17,7 +17,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   final StreamController<ChipSuggestions<T>> _suggestionsStream;
   final StreamController<ChipInput> _queryStream;
-  final StreamController<Iterable<T>> _chipStream;
+  final StreamController<ChipList<T>> _chipStream;
   final ChipTokenizer<T> tokenizer;
   OverlayEntry _overlayEntry;
   BuildContext _context;
@@ -49,10 +49,10 @@ class ChipsInputController<T> extends ChangeNotifier {
     notifyListeners();
   }
 
-  set chips(Iterable<T> chips) {
+  updateChips(Iterable<T> chips, {@required bool userInput}) {
     _chips.clear();
     _chips.addAll(chips);
-    _chipStream.add(List.from(_chips, growable: false));
+    _chipStream.add(ChipList<T>(List.from(_chips, growable: false), userInput: userInput));
     notifyListeners();
   }
 
@@ -67,7 +67,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   Stream<ChipInput> get queryStream => _queryStream.stream;
 
-  Stream<Iterable<T>> get chipStream => _chipStream.stream;
+  Stream<ChipList<T>> get chipStream => _chipStream.stream;
 
   List<T> get suggestions => List.from(_suggestions ?? [], growable: false);
 
@@ -145,16 +145,18 @@ class ChipsInputController<T> extends ChangeNotifier {
     }
   }
 
+  ChipList<T> _currentChips(bool userInput) => ChipList<T>(List.from(_chips, growable: false), userInput: userInput);
+
   void removeAt(int index) {
     _chips.removeAt(index);
-    _chipStream.add(List.from(_chips, growable: false));
+    _chipStream.add(_currentChips(false));
     notifyListeners();
   }
 
   void deleteChip(T data) {
     if (enabled) {
       _chips.remove(data);
-      _chipStream.add(List.from(_chips, growable: false));
+      _chipStream.add(_currentChips(false));
       notifyListeners();
     }
   }
@@ -173,7 +175,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   void addChip(T data, {bool resetQuery = false}) {
     if (enabled) {
       _chips.add(data);
-      _chipStream.add(List.from(_chips, growable: false));
+      _chipStream.add(_currentChips(false));
       notifyListeners();
     }
     if (resetQuery) {
@@ -214,7 +216,7 @@ class ChipsInputController<T> extends ChangeNotifier {
       }
     }
     if (changed) {
-      _chipStream.add(List.from(_chips, growable: false));
+      _chipStream.add(_currentChips(false));
       notifyListeners();
     }
     return changed;
@@ -222,7 +224,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   void addAll(Iterable<T> values) {
     values?.forEach((v) => _chips.add(v));
-    _chipStream.add(List.from(_chips, growable: false));
+    _chipStream.add(_currentChips(false));
     notifyListeners();
   }
 
@@ -237,7 +239,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   void pop() {
     _chips.removeLast();
-    _chipStream.add(List.from(_chips, growable: false));
+    _chipStream.add(_currentChips(false));
     notifyListeners();
   }
 
@@ -305,4 +307,12 @@ class ChipInput {
   final bool userInput;
 
   ChipInput(this.text, {this.userInput});
+}
+
+/// Helps to detect input that came from the user's keyboard so we don't infinitely update the text box
+class ChipList<T> {
+  final Iterable<T> chips;
+  final bool userInput;
+
+  ChipList(this.chips, {@required this.userInput});
 }

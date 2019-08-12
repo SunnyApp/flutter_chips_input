@@ -124,7 +124,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     }));
 
     _streams.add(_controller.chipStream.listen((chips) {
-      if (_connection?.attached == true) {
+      if (!chips.userInput && _connection?.attached == true) {
         _connection?.setEditingState(textEditingValue(_chipReplacementText + _controller.query));
       }
       widget.onChipsChanged?.call(_controller);
@@ -163,7 +163,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     return value.codeUnits.where((ch) => ch == kObjectReplacementChar).length;
   }
 
-  String get _chipReplacementText => String.fromCharCodes(_chips.expand((_) => [kObjectReplacementChar]));
+  String get _chipReplacementText => _chipReplacementTextFor(_chips);
+  String _chipReplacementTextFor(Iterable<T> chips) =>
+      String.fromCharCodes(chips.expand((_) => [kObjectReplacementChar]));
 
   TextEditingValue get _textValue => textEditingValue(_chipReplacementText + _query);
 
@@ -195,7 +197,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final oldCount = _chips.length;
     final newCount = _countReplacements(newText);
     if (newCount < oldCount) {
-      _controller.chips = _chips.take(newCount);
+      _controller.updateChips(_chips.take(newCount), userInput: true);
     }
     _controller.setQuery(
       String.fromCharCodes(newText.codeUnits.where((c) => c != kObjectReplacementChar)),
