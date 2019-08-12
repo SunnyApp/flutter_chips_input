@@ -116,6 +116,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     if (widget.initialValue != null) {
       _controller.addAll(widget.initialValue);
     }
+    _controller.requestKeyboardCallback = () => _showKeyboard();
     _controller.placeholder = widget.placeholder;
     _controller.addListener(_onChanged);
     _streams.add(_controller.queryStream.listen((query) {
@@ -234,8 +235,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   void _onFocusChanged() {
     if (_focusNode.hasFocus && _canFocus) {
-      _openInputConnection();
-      _controller.open();
+      _showKeyboard();
     } else {
       _closeInputConnectionIfNeeded();
       _controller.close();
@@ -244,6 +244,13 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     setState(() {
       /*rebuild so that _TextCursor is hidden.*/
     });
+  }
+
+  _showKeyboard() {
+    if (_canFocus) {
+      _openInputConnection();
+      _controller.open();
+    }
   }
 
   @override

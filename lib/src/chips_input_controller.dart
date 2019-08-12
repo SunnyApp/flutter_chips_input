@@ -15,6 +15,14 @@ class ChipsInputController<T> extends ChangeNotifier {
   String _placeholder;
   bool enabled = true;
 
+  VoidCallback _requestKeyboard;
+
+  requestKeyboard() {
+    _requestKeyboard?.call();
+  }
+
+  set requestKeyboardCallback(VoidCallback callback) => this._requestKeyboard = callback;
+
   final StreamController<ChipSuggestions<T>> _suggestionsStream;
   final StreamController<ChipInput> _queryStream;
   final StreamController<ChipList<T>> _chipStream;
@@ -25,6 +33,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   bool hideSuggestionOverlay;
 
   ControllerStatus get status => _status;
+
   String get placeholder => _placeholder;
 
   ChipsInputController(
