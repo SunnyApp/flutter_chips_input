@@ -105,6 +105,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   Size size;
 
+  String _lastDirectState;
+
   @override
   void initState() {
     super.initState();
@@ -118,14 +120,16 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     _controller.addListener(_onChanged);
     _streams.add(_controller.queryStream.listen((query) {
       if (!query.userInput && _connection?.attached == true) {
-        _connection?.setEditingState(textEditingValue(_chipReplacementText + query.text));
+        _lastDirectState = _chipReplacementText + query.text;
+        _connection?.setEditingState(textEditingValue(_lastDirectState));
       }
       widget.onQueryChanged?.call(query.text, _controller);
     }));
 
     _streams.add(_controller.chipStream.listen((chips) {
       if (!chips.userInput && _connection?.attached == true) {
-        _connection?.setEditingState(textEditingValue(_chipReplacementText + _controller.query));
+        _lastDirectState = _chipReplacementText + _controller.query;
+        _connection?.setEditingState(textEditingValue(_lastDirectState));
       }
       widget.onChipsChanged?.call(_controller);
     }));
@@ -193,10 +197,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   /// set the editing value
   @override
   void updateEditingValue(TextEditingValue value) {
+    bool isUserInput = _lastDirectState == value.text;
+    _lastDirectState = null;
     String newText = value.text;
     final oldCount = _chips.length;
     final newCount = _countReplacements(newText);
-    if (newCount < oldCount) {
+    if (isUserInput && newCount < oldCount) {
       _controller.updateChips(_chips.take(newCount), userInput: true);
     }
     _controller.setQuery(
