@@ -52,7 +52,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   updateChips(Iterable<T> chips, {@required bool userInput}) {
     _chips.clear();
     _chips.addAll(chips);
-    _chipStream.add(ChipList<T>(List.from(_chips, growable: false), userInput: userInput));
+    _chipStream.add(_currentChips(userInput));
     notifyListeners();
   }
 
