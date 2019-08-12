@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
@@ -15,9 +14,10 @@ class ChipsInputController<T> extends ChangeNotifier {
   String _suggestionToken;
   String _placeholder;
   bool enabled = true;
-  final StreamController<ChipSuggestions<T>> _suggestionsStreamController = StreamController.broadcast();
-  final StreamController<ChipInput> _queryStreamController = StreamController.broadcast();
-  final StreamController<Iterable<T>> _chipStream = StreamController.broadcast();
+
+  final StreamController<ChipSuggestions<T>> _suggestionsStream;
+  final StreamController<ChipInput> _queryStream;
+  final StreamController<Iterable<T>> _chipStream;
   final ChipTokenizer<T> tokenizer;
   OverlayEntry _overlayEntry;
   BuildContext _context;
@@ -29,10 +29,14 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   ChipsInputController(
     this.findSuggestions, {
+    bool sync = false,
     ChipTokenizer<T> tokenizer,
     this.hideSuggestionOverlay = false,
   })  : assert(findSuggestions != null),
-        tokenizer = tokenizer ?? ((t) => ["$t"]);
+        tokenizer = tokenizer ?? ((t) => ["$t"]),
+        _suggestionsStream = StreamController.broadcast(sync: sync),
+        _chipStream = StreamController.broadcast(sync: sync),
+        _queryStream = StreamController.broadcast(sync: sync);
 
   List<T> get chips => List.from(_chips, growable: false);
 
@@ -54,14 +58,14 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   dispose() {
     super.dispose();
-    _suggestionsStreamController.close();
-    _queryStreamController.close();
+    _suggestionsStream.close();
+    _queryStream.close();
     _chipStream.close();
   }
 
-  Stream<ChipSuggestions<T>> get suggestionStream => _suggestionsStreamController.stream;
+  Stream<ChipSuggestions<T>> get suggestionStream => _suggestionsStream.stream;
 
-  Stream<ChipInput> get queryStream => _queryStreamController.stream;
+  Stream<ChipInput> get queryStream => _queryStream.stream;
 
   Stream<Iterable<T>> get chipStream => _chipStream.stream;
 
@@ -86,14 +90,14 @@ class ChipsInputController<T> extends ChangeNotifier {
     _suggestions = suggestions;
 
     calculateInlineSuggestion(_suggestions);
-    _suggestionsStreamController.add(ChipSuggestions(suggestions: suggestions));
+    _suggestionsStream.add(ChipSuggestions(suggestions: suggestions));
     notifyListeners();
   }
 
   setQuery(String query, {bool userInput = false}) {
     if (query != _query) {
       _query = query;
-      _queryStreamController.add(ChipInput(query, userInput: userInput));
+      _queryStream.add(ChipInput(query, userInput: userInput));
       notifyListeners();
       Future.microtask(() => _loadSuggestions());
     }
@@ -107,7 +111,7 @@ class ChipsInputController<T> extends ChangeNotifier {
     } else {
       calculateInlineSuggestion(_suggestions);
     }
-    _suggestionsStreamController.add(results);
+    _suggestionsStream.add(results);
     notifyListeners();
   }
 
@@ -226,8 +230,8 @@ class ChipsInputController<T> extends ChangeNotifier {
     _suggestion = null;
     _query = null;
     _suggestions = [];
-    _suggestionsStreamController.add(ChipSuggestions.empty<T>());
-    _queryStreamController.add(ChipInput("", userInput: false));
+    _suggestionsStream.add(ChipSuggestions.empty<T>());
+    _queryStream.add(ChipInput("", userInput: false));
     notifyListeners();
   }
 
