@@ -220,6 +220,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       if (!hasInputConnection) {
         _connection?.close();
         _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
+        _controller.connection = _connection;
         _connection.setEditingState(_textValue);
       }
       _connection.show();
@@ -233,6 +234,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       if (hasInputConnection) {
         _connection.close();
         _connection = null;
+        _controller.connection = null;
       }
     } catch (e) {
       print(e);
