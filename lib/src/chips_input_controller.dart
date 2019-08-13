@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input.dart';
@@ -17,6 +18,8 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   VoidCallback _requestKeyboard;
   VoidCallback _hideKeyboard;
+
+  TextInputConnection connection;
 
   requestKeyboard() {
     _requestKeyboard?.call();

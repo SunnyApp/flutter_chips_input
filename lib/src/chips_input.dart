@@ -116,8 +116,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     if (widget.initialValue != null) {
       _controller.addAll(widget.initialValue);
     }
+
     _controller.requestKeyboardCallback = () => _openInputConnection();
-    _controller.requestKeyboardCallback = () => _closeInputConnectionIfNeeded();
+    _controller.hideKeyboardCallback = () => _closeInputConnectionIfNeeded();
 
     _controller.placeholder = widget.placeholder;
     _controller.addListener(_onChanged);
@@ -215,17 +216,26 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   }
 
   void _openInputConnection() {
-    if (!hasInputConnection) {
-      _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
-      _connection.setEditingState(_textValue);
+    try {
+      if (!hasInputConnection) {
+        _connection?.close();
+        _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
+        _connection.setEditingState(_textValue);
+      }
+      _connection.show();
+    } catch (e) {
+      print(e);
     }
-    _connection.show();
   }
 
   void _closeInputConnectionIfNeeded() {
-    if (hasInputConnection) {
-      _connection.close();
-      _connection = null;
+    try {
+      if (hasInputConnection) {
+        _connection.close();
+        _connection = null;
+      }
+    } catch (e) {
+      print(e);
     }
   }
 
