@@ -16,12 +16,18 @@ class ChipsInputController<T> extends ChangeNotifier {
   bool enabled = true;
 
   VoidCallback _requestKeyboard;
+  VoidCallback _hideKeyboard;
 
   requestKeyboard() {
     _requestKeyboard?.call();
   }
 
+  hideKeyboard() {
+    _hideKeyboard?.call();
+  }
+
   set requestKeyboardCallback(VoidCallback callback) => this._requestKeyboard = callback;
+  set hideKeyboardCallback(VoidCallback callback) => this._hideKeyboard = callback;
 
   final StreamController<ChipSuggestions<T>> _suggestionsStream;
   final StreamController<ChipInput> _queryStream;
