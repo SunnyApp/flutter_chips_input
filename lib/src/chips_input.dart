@@ -377,6 +377,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     );
 
     bool _deleting = false;
+    bool _accepting = false;
     return CompositedTransformTarget(
       link: _layerLink,
       child: GestureDetector(
@@ -394,17 +395,20 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
               // Close the whole thing?
               Navigator.pop(context);
             }
+          } else if (_accepting) {
+            // We are trying to select something
+            if (_controller.suggestion != null) {
+              _controller.acceptSuggestion();
+            }
           }
         },
         onPanUpdate: (details) {
           if (details.delta.dx > 0) {
             _deleting = false;
-            // We are trying to select something
-            if (_controller.suggestion != null) {
-              _controller.acceptSuggestion();
-            }
+            _accepting = true;
           } else if (details.delta.dx < 0) {
             _deleting = true;
+            _accepting = false;
           }
         },
         child: InputDecorator(
