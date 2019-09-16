@@ -383,7 +383,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => requestKeyboard(context),
-        onPanEnd: (details) {
+        onHorizontalDragEnd: (details) {
           if (_deleting) {
             _deleting = false;
             // other way??
@@ -402,7 +402,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
             }
           }
         },
-        onPanUpdate: (details) {
+        onHorizontalDragUpdate: (DragUpdateDetails details) {
           if (details.delta.dx > 0) {
             _deleting = false;
             _accepting = true;
