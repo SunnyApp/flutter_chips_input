@@ -411,14 +411,17 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
             _accepting = false;
           }
         },
-        child: InputDecorator(
-          decoration: widget.decoration,
-          isFocused: _focusNode.hasFocus,
-          isEmpty: _query?.isNotEmpty != true && _chips.length == 0,
-          child: Wrap(
-            children: chipsChildren,
-            spacing: 4.0,
-            runSpacing: 4.0,
+        child: Semantics(
+          label: "Action Input",
+          child: InputDecorator(
+            decoration: widget.decoration,
+            isFocused: _focusNode.hasFocus,
+            isEmpty: _query?.isNotEmpty != true && _chips.length == 0,
+            child: Wrap(
+              children: chipsChildren,
+              spacing: 4.0,
+              runSpacing: 4.0,
+            ),
           ),
         ),
       ),
