@@ -310,13 +310,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
     return TextSpan(
-      semanticsLabel: "Action query and suggestion",
       children: [
-        if (_query.isNotEmpty)
-          TextSpan(style: textTheme, text: q, recognizer: _recognizer, semanticsLabel: "Action query"),
+        if (_query.isNotEmpty) TextSpan(style: textTheme, text: q, recognizer: _recognizer),
         if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true)
           TextSpan(
-            semanticsLabel: "Action suggestion",
             recognizer: _recognizer,
             text: suggestionToken.substring(q.length),
             style: textTheme.copyWith(
@@ -359,20 +356,23 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                RichText(text: _textSpan),
+                Semantics(label: "Action query", child: RichText(text: _textSpan)),
               ],
             ),
             if (_query.trim().isEmpty && _controller.suggestion == null && _controller.placeholder?.isNotEmpty == true)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    _controller.placeholder,
-                    style: placeholder,
-                    semanticsLabel: "Placeholder",
-                  ),
-                ],
+              Semantics(
+                label: "Action placeholder",
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _controller.placeholder,
+                      style: placeholder,
+                      semanticsLabel: "Placeholder",
+                    ),
+                  ],
+                ),
               ),
           ],
         ),
