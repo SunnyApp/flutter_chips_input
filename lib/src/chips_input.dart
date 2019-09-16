@@ -308,7 +308,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final suggestionToken = _controller.suggestionToken;
     final q = _controller.query;
     if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true) {
-      return QueryText(q, suggestionToken.substring(q.length));
+      return QueryText(q, suggestionToken);
     } else {
       return QueryText(q);
     }
@@ -489,7 +489,6 @@ class QueryText {
   TextSpan textSpan(ThemeData theme, GestureRecognizer recognizer) {
     final q = _query;
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
-
     if (_suggestion?.isNotEmpty != true) recognizer = null;
     return TextSpan(
       children: [
