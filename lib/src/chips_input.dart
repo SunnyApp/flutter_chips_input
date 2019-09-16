@@ -308,9 +308,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final suggestionToken = _controller.suggestionToken;
     final q = _controller.query;
     if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true) {
-      return QueryText(q);
-    } else {
       return QueryText(q, suggestionToken.substring(q.length));
+    } else {
+      return QueryText(q);
     }
   }
 
