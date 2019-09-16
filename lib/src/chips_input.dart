@@ -412,7 +412,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
           }
         },
         child: Semantics(
-          label: "Action Input",
+          label: "Action Accept Drag Target",
           child: InputDecorator(
             decoration: widget.decoration,
             isFocused: _focusNode.hasFocus,
