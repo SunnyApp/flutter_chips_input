@@ -310,15 +310,13 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
     return TextSpan(
+      semanticsLabel: "Action query and suggestion",
       children: [
         if (_query.isNotEmpty)
-          TextSpan(
-            style: textTheme,
-            text: q,
-            recognizer: _recognizer,
-          ),
+          TextSpan(style: textTheme, text: q, recognizer: _recognizer, semanticsLabel: "Action query"),
         if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true)
           TextSpan(
+            semanticsLabel: "Action suggestion",
             recognizer: _recognizer,
             text: suggestionToken.substring(q.length),
             style: textTheme.copyWith(
@@ -369,7 +367,11 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(_controller.placeholder, style: placeholder),
+                  Text(
+                    _controller.placeholder,
+                    style: placeholder,
+                    semanticsLabel: "Placeholder",
+                  ),
                 ],
               ),
           ],
