@@ -356,7 +356,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Semantics(label: "Action query", child: RichText(text: _textSpan)),
+                Semantics(
+                    label: "Action query",
+                    child: Tooltip(
+                      child: RichText(text: _textSpan),
+                      message: _textSpan.text,
+                    )),
               ],
             ),
             if (_query.trim().isEmpty && _controller.suggestion == null && _controller.placeholder?.isNotEmpty == true)
