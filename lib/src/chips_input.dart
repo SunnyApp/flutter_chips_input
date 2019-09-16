@@ -486,14 +486,18 @@ class QueryText {
 
   QueryText(this._query, [this._suggestion]);
 
+  bool get hasSuggestion => _suggestion?.isNotEmpty == true;
+  bool get hasQuery => _query?.isNotEmpty == true;
+
   TextSpan textSpan(ThemeData theme, GestureRecognizer recognizer) {
     final q = _query;
+    if (!hasSuggestion) recognizer = null;
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
     if (_suggestion?.isNotEmpty != true) recognizer = null;
     return TextSpan(
       children: [
-        if (_query?.isNotEmpty == true) TextSpan(style: textTheme, text: q, recognizer: recognizer),
-        if (_suggestion?.isNotEmpty == true)
+        if (hasQuery) TextSpan(style: textTheme, text: q, recognizer: recognizer),
+        if (hasSuggestion)
           TextSpan(
             recognizer: recognizer,
             text: _suggestion.substring(q.length),
