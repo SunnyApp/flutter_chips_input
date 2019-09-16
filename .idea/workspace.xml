@@ -186,8 +186,19 @@
     <MESSAGE value="Matching case" />
     <option name="LAST_COMMIT_MESSAGE" value="Matching case" />
   </component>
+  <component name="WindowStateProjectService">
+    <state x="139" y="75" width="670" height="158" key="search.everywhere.popup" />
+    <state x="139" y="75" width="670" height="158" key="search.everywhere.popup/2880.1800" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/src/chips_input.dart</url>
+          <line>307</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
       <default-breakpoints>
         <breakpoint type="dart-exception">
           <properties>

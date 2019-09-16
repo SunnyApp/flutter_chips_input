@@ -172,6 +172,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   }
 
   String get _chipReplacementText => _chipReplacementTextFor(_chips);
+
   String _chipReplacementTextFor(Iterable<T> chips) =>
       String.fromCharCodes(chips.expand((_) => [kObjectReplacementChar]));
 
@@ -303,25 +304,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     }
   }
 
-  TextSpan get _textSpan {
+  QueryText get _queryText {
     final suggestionToken = _controller.suggestionToken;
-    final q = _query;
-    final _recognizer = suggestionToken != null ? _onSuggestionTap : null;
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
-    return TextSpan(
-      children: [
-        if (_query.isNotEmpty) TextSpan(style: textTheme, text: q, recognizer: _recognizer),
-        if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true)
-          TextSpan(
-            recognizer: _recognizer,
-            text: suggestionToken.substring(q.length),
-            style: textTheme.copyWith(
-              color: textTheme.color.withOpacity(0.4),
-            ),
-          ),
-      ],
-    );
+    final q = _controller.query;
+    if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true) {
+      return QueryText(q);
+    } else {
+      return QueryText(q, suggestionToken.substring(q.length));
+    }
   }
 
   @override
@@ -338,6 +328,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final transparentText = textTheme.copyWith(color: Colors.transparent);
     final placeholder = textTheme.copyWith(color: textTheme.color.withOpacity(0.4));
 
+    final queryText = _queryText;
     chipsChildren.add(
       Container(
         height: 32.0,
@@ -357,11 +348,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Semantics(
-                    label: "Action query",
-                    child: Tooltip(
-                      child: RichText(text: _textSpan),
-                      message: _textSpan.text,
-                    )),
+                  label: "Action query",
+                  child: Semantics(
+                    child: RichText(text: queryText.textSpan(Theme.of(context), _onSuggestionTap)),
+                    label: "Suggest ${queryText._suggestion}",
+                  ),
+                ),
               ],
             ),
             if (_query.trim().isEmpty && _controller.suggestion == null && _controller.placeholder?.isNotEmpty == true)
@@ -486,3 +478,31 @@ textEditingValue(String text) => TextEditingValue(
     );
 
 const kObjectReplacementChar = 0xFFFC;
+
+/// Holds query text and suggestions
+class QueryText {
+  final String _query;
+  final String _suggestion;
+
+  QueryText(this._query, [this._suggestion]);
+
+  TextSpan textSpan(ThemeData theme, GestureRecognizer recognizer) {
+    final q = _query;
+    final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
+
+    if (_suggestion?.isNotEmpty != true) recognizer = null;
+    return TextSpan(
+      children: [
+        if (_query?.isNotEmpty == true) TextSpan(style: textTheme, text: q, recognizer: recognizer),
+        if (_suggestion?.isNotEmpty == true)
+          TextSpan(
+            recognizer: recognizer,
+            text: _suggestion.substring(q.length),
+            style: textTheme.copyWith(
+              color: textTheme.color.withOpacity(0.4),
+            ),
+          ),
+      ],
+    );
+  }
+}
