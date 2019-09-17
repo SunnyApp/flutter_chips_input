@@ -15,6 +15,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   String _suggestionToken;
   String _placeholder;
   bool enabled = true;
+  bool get disabled => enabled != true;
 
   VoidCallback _requestKeyboard;
   VoidCallback _hideKeyboard;

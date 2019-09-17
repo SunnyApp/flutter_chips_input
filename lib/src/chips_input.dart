@@ -300,7 +300,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       },
     ));
 
-    if (widget.autofocus == true) {
+    if (_controller.enabled && widget.autofocus == true) {
       FocusScope.of(context).requestFocus(_focusNode);
     }
   }
@@ -357,7 +357,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
                 ),
               ],
             ),
-            if (_query.trim().isEmpty && _controller.suggestion == null && _controller.placeholder?.isNotEmpty == true)
+            if (_controller.enabled &&
+                _query.trim().isEmpty &&
+                _controller.suggestion == null &&
+                _controller.placeholder?.isNotEmpty == true)
               Semantics(
                 label: "Action placeholder",
                 child: Row(
@@ -383,35 +386,39 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       link: _layerLink,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => requestKeyboard(context),
-        onHorizontalDragEnd: (details) {
-          if (_deleting) {
-            _deleting = false;
-            // other way??
-            if (_controller.query.isNotEmpty == true) {
-              _controller.setQuery("");
-            } else if (_controller.size > 0) {
-              _controller.pop();
-            } else {
-              // Close the whole thing?
-              Navigator.pop(context);
-            }
-          } else if (_accepting) {
-            // We are trying to select something
-            if (_controller.suggestion != null) {
-              _controller.acceptSuggestion();
-            }
-          }
-        },
-        onHorizontalDragUpdate: (DragUpdateDetails details) {
-          if (details.delta.dx > 0) {
-            _deleting = false;
-            _accepting = true;
-          } else if (details.delta.dx < 0) {
-            _deleting = true;
-            _accepting = false;
-          }
-        },
+        onTap: _controller.enabled ? () => requestKeyboard(context) : null,
+        onHorizontalDragEnd: _controller.disabled
+            ? null
+            : (details) {
+                if (_deleting) {
+                  _deleting = false;
+                  // other way??
+                  if (_controller.query.isNotEmpty == true) {
+                    _controller.setQuery("");
+                  } else if (_controller.size > 0) {
+                    _controller.pop();
+                  } else {
+                    // Close the whole thing?
+                    Navigator.pop(context);
+                  }
+                } else if (_accepting) {
+                  // We are trying to select something
+                  if (_controller.suggestion != null) {
+                    _controller.acceptSuggestion();
+                  }
+                }
+              },
+        onHorizontalDragUpdate: _controller.disabled
+            ? null
+            : (DragUpdateDetails details) {
+                if (details.delta.dx > 0) {
+                  _deleting = false;
+                  _accepting = true;
+                } else if (details.delta.dx < 0) {
+                  _deleting = true;
+                  _accepting = false;
+                }
+              },
         child: Semantics(
           label: "Action Accept Drag Target",
           child: InputDecorator(
