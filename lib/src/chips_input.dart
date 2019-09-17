@@ -36,7 +36,7 @@ typedef OnLostFocus<T> = void Function(ChipsInputController<T> controller);
 class ChipsInput<T> extends StatefulWidget {
   ChipsInput({
     Key key,
-    this.initialValue,
+    Iterable<T> initialValue,
     this.decoration = const InputDecoration(),
     this.enabled = true,
     @required this.chipBuilder,
@@ -58,7 +58,8 @@ class ChipsInput<T> extends StatefulWidget {
     /// When an inline suggestion is present and tapped.
     this.onSuggestionTap,
     this.controller,
-  })  : assert(maxChips == null || initialValue.length <= maxChips),
+  })  : initialValue = [...?initialValue.where((s) => s != null)],
+        assert(maxChips == null || initialValue.length <= maxChips),
         assert(controller == null || findSuggestions == null),
         super(key: key);
 
