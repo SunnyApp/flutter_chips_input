@@ -58,7 +58,7 @@ class ChipsInput<T> extends StatefulWidget {
     /// When an inline suggestion is present and tapped.
     this.onSuggestionTap,
     this.controller,
-  })  : initialValue = [...?initialValue.where((s) => s != null)],
+  })  : initialValue = initialValue?.where((s) => s != null)?.toList(),
         assert(maxChips == null || initialValue.length <= maxChips),
         assert(controller == null || findSuggestions == null),
         super(key: key);
