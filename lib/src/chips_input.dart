@@ -43,6 +43,7 @@ class ChipsInput<T> extends StatefulWidget {
     this.suggestionBuilder,
     this.findSuggestions,
     this.placeholder,
+    this.elevation,
     this.chipTokenizer,
     this.onChipTapped,
     this.onQueryChanged,
@@ -83,6 +84,7 @@ class ChipsInput<T> extends StatefulWidget {
   final BuildChipsWidget<T> suggestionBuilder;
   final List<T> initialValue;
   final int maxChips;
+  final double elevation;
   final bool autofocus;
   final FocusNode focusNode;
   final TextInputConfiguration inputConfiguration;
@@ -265,13 +267,14 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   @override
   void afterFirstLayout(BuildContext context) {
-    final RenderBox box = context.findRenderObject();
-    size = box.size;
+    final inputCtx = context;
     _controller.initialize(context, OverlayEntry(
       builder: (context) {
         return StreamBuilder(
           stream: _controller.suggestionStream,
           builder: (BuildContext context, AsyncSnapshot<ChipSuggestions<T>> snapshot) {
+            final RenderBox box = inputCtx.findRenderObject();
+            size = box.size;
             if (snapshot.data?.suggestions?.isNotEmpty == true) {
               final _suggestions = snapshot.data.suggestions;
               return Positioned(
@@ -281,12 +284,18 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
                   showWhenUnlinked: false,
                   offset: Offset(0.0, size.height + 5.0),
                   child: Material(
-                    elevation: 4.0,
+                    elevation: widget.elevation ?? 2.0,
                     child: ListView.builder(
                       shrinkWrap: true,
+                      padding: EdgeInsets.zero,
                       itemCount: snapshot.data?.suggestions?.length ?? 0,
                       itemBuilder: (BuildContext context, int index) {
-                        return widget.suggestionBuilder(context, _controller, index, _suggestions[index]);
+                        return widget.suggestionBuilder(
+                          context,
+                          _controller,
+                          index,
+                          _suggestions[index],
+                        );
                       },
                     ),
                   ),
