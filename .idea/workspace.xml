@@ -7,11 +7,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ccea7879-7873-4656-9a21-d45675016680" name="Default" comment="Matching case">
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/chips_input.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/chips_input.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -25,6 +28,7 @@
       <executable />
     </execution>
   </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="Galaxy_Nexus_API_28" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -84,18 +88,6 @@
       <recent name="$PROJECT_DIR$/lib/src" />
     </key>
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
   <component name="RunManager">
     <configuration default="true" type="Application" factoryName="Application">
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
@@ -123,6 +115,18 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -190,10 +194,14 @@
     <option name="LAST_COMMIT_MESSAGE" value="Matching case" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="30" y="124" width="1250" height="731" key="find.popup" />
-    <state x="30" y="124" width="1250" height="731" key="find.popup/2880.1800" />
-    <state x="139" y="75" width="670" height="158" key="search.everywhere.popup" />
-    <state x="139" y="75" width="670" height="158" key="search.everywhere.popup/2880.1800" />
+    <state x="259" y="70" key="SettingsEditor" timestamp="1575702965702">
+      <screen x="0" y="23" width="1440" height="832" />
+    </state>
+    <state x="259" y="70" key="SettingsEditor/0.23.1440.832@0.23.1440.832" timestamp="1575702965702" />
+    <state x="30" y="124" width="1250" height="731" key="find.popup" timestamp="1575702958961" />
+    <state x="30" y="124" width="1250" height="731" key="find.popup/2880.1800" timestamp="1575702958961" />
+    <state x="139" y="75" width="670" height="158" key="search.everywhere.popup" timestamp="1575702958961" />
+    <state x="139" y="75" width="670" height="158" key="search.everywhere.popup/2880.1800" timestamp="1575702958961" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

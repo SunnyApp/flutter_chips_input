@@ -197,9 +197,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   /// Implemented from [TextInputClient]
   @override
-  void updateFloatingCursor(RawFloatingCursorPoint point) {
-    print(point);
-  }
+  void updateFloatingCursor(RawFloatingCursorPoint point) {}
 
   /// Implemented from [TextInputClient].  This should never be called directly; instead, use the [_controller] to
   /// set the editing value
@@ -444,6 +442,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       ),
     );
   }
+
+  @override
+  void connectionClosed() {}
 }
 
 class _TextCaret extends StatefulWidget {
