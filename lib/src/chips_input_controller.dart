@@ -328,7 +328,6 @@ class ChipInput {
   ChipInput(this.text, {this.userInput});
 }
 
-/// Helps to detect input that came from the user's keyboard so we don't infinitely update the text box
 class ChipList<T> {
   final Iterable<T> chips;
   final bool userInput;
