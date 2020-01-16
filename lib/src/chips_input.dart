@@ -8,11 +8,12 @@ import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input_controller.dart';
 
 /// Generates a list of suggestions given a query
-typedef GenerateSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
+typedef GenerateSuggestions<T> = FutureOr<ChipSuggestions> Function(
+    String query);
 
 /// Builds a widget for a chip.  Used for autocomplete and chips
-typedef BuildChipsWidget<T> = Widget Function(
-    BuildContext context, ChipsInputController<T> controller, int index, T data);
+typedef BuildChipsWidget<T> = Widget Function(BuildContext context,
+    ChipsInputController<T> controller, int index, T data);
 
 /// An action that's executed when the user clicks the keyboard action
 typedef PerformTextInputAction<T> = void Function(TextInputAction type);
@@ -24,7 +25,8 @@ typedef ChipTokenizer<T> = Iterable<String> Function(T input);
 typedef ChipAction<T> = void Function(T chip);
 
 /// Simple callback for query changing.
-typedef QueryChanged<T> = void Function(String query, ChipsInputController<T> controller);
+typedef QueryChanged<T> = void Function(
+    String query, ChipsInputController<T> controller);
 
 /// Simple callback for query changing.
 typedef ChipsChanged<T> = void Function(ChipsInputController<T> controller);
@@ -96,7 +98,9 @@ class ChipsInput<T> extends StatefulWidget {
   ChipsInputState<T> createState() => ChipsInputState<T>();
 }
 
-class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<ChipsInput<T>> implements TextInputClient {
+class ChipsInputState<T> extends State<ChipsInput<T>>
+    with AfterLayoutMixin<ChipsInput<T>>
+    implements TextInputClient {
   ChipsInputController<T> _controller;
   FocusNode _focusNode;
   TextInputConnection _connection;
@@ -113,7 +117,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   @override
   void initState() {
     super.initState();
-    _controller = widget.controller ?? ChipsInputController<T>(widget.findSuggestions);
+    _controller =
+        widget.controller ?? ChipsInputController<T>(widget.findSuggestions);
     _controller.enabled = widget.enabled;
     _controller.hideSuggestionOverlay ??= widget.hideSuggestionsOverlay;
     if (widget.initialValue != null) {
@@ -179,7 +184,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   String _chipReplacementTextFor(Iterable<T> chips) =>
       String.fromCharCodes(chips.expand((_) => [kObjectReplacementChar]));
 
-  TextEditingValue get _textValue => textEditingValue(_chipReplacementText + _query);
+  TextEditingValue get _textValue =>
+      textEditingValue(_chipReplacementText + _query);
 
   List<T> get _chips => _controller.chips;
 
@@ -212,7 +218,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       _controller.updateChips(_chips.take(newCount), userInput: true);
     }
     _controller.setQuery(
-      String.fromCharCodes(newText.codeUnits.where((c) => c != kObjectReplacementChar)),
+      String.fromCharCodes(
+          newText.codeUnits.where((c) => c != kObjectReplacementChar)),
       userInput: true,
     );
   }
@@ -221,7 +228,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     try {
       if (!hasInputConnection) {
         _connection?.close();
-        _connection = TextInput.attach(this, widget.inputConfiguration ?? TextInputConfiguration());
+        _connection = TextInput.attach(
+            this, widget.inputConfiguration ?? TextInputConfiguration());
         _controller.connection = _connection;
         _connection.setEditingState(_textValue);
       }
@@ -247,7 +255,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     FocusScope.of(context).requestFocus(_focusNode);
   }
 
-  bool get _canFocus => widget.maxChips == null || _chips.length < widget.maxChips;
+  bool get _canFocus =>
+      widget.maxChips == null || _chips.length < widget.maxChips;
 
   void _onFocusChanged() {
     if (_focusNode.hasFocus && _canFocus) {
@@ -270,7 +279,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       builder: (context) {
         return StreamBuilder(
           stream: _controller.suggestionStream,
-          builder: (BuildContext context, AsyncSnapshot<ChipSuggestions<T>> snapshot) {
+          builder: (BuildContext context,
+              AsyncSnapshot<ChipSuggestions<T>> snapshot) {
             final RenderBox box = inputCtx.findRenderObject();
             size = box.size;
             if (snapshot.data?.suggestions?.isNotEmpty == true) {
@@ -315,7 +325,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   QueryText get _queryText {
     final suggestionToken = _controller.suggestionToken;
     final q = _controller.query;
-    if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true) {
+    if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) ==
+        true) {
       return QueryText(q, suggestionToken);
     } else {
       return QueryText(q);
@@ -326,7 +337,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   Widget build(BuildContext context) {
     var chipsChildren = _chips
         .asMap()
-        .map((index, data) => MapEntry(index, widget.chipBuilder(context, _controller, index, data)))
+        .map((index, data) => MapEntry(
+            index, widget.chipBuilder(context, _controller, index, data)))
         .values
         .where((data) => data != null)
         .toList();
@@ -334,7 +346,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.subhead.copyWith(height: 1.5);
     final transparentText = textTheme.copyWith(color: Colors.transparent);
-    final placeholder = textTheme.copyWith(color: textTheme.color.withOpacity(0.4));
+    final placeholder =
+        textTheme.copyWith(color: textTheme.color.withOpacity(0.4));
 
     final queryText = _queryText;
     chipsChildren.add(
@@ -358,7 +371,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
                 Semantics(
                   label: "Action query",
                   child: Semantics(
-                    child: RichText(text: queryText.textSpan(Theme.of(context), _onSuggestionTap)),
+                    child: RichText(
+                        text: queryText.textSpan(
+                            Theme.of(context), _onSuggestionTap)),
                     label: "Suggest ${queryText._suggestion}",
                   ),
                 ),
@@ -444,7 +459,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
   }
 
   @override
-  void connectionClosed() {}
+  void connectionClosed() {
+
+  }
+
+  @override
+  TextEditingValue get currentTextEditingValue => _textValue;
 }
 
 class _TextCaret extends StatefulWidget {
@@ -461,7 +481,8 @@ class _TextCaret extends StatefulWidget {
   _TextCursorState createState() => _TextCursorState();
 }
 
-class _TextCursorState extends State<_TextCaret> with SingleTickerProviderStateMixin {
+class _TextCursorState extends State<_TextCaret>
+    with SingleTickerProviderStateMixin {
   bool _displayed = false;
   Timer _timer;
 
@@ -521,7 +542,8 @@ class QueryText {
     if (_suggestion?.isNotEmpty != true) recognizer = null;
     return TextSpan(
       children: [
-        if (hasQuery) TextSpan(style: textTheme, text: q, recognizer: recognizer),
+        if (hasQuery)
+          TextSpan(style: textTheme, text: q, recognizer: recognizer),
         if (hasSuggestion)
           TextSpan(
             recognizer: recognizer,
