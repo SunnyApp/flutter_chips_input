@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger("chips_input");
 
 class ChipsInputController<T> extends ChangeNotifier {
   final GenerateSuggestions<T> findSuggestions;
@@ -118,7 +121,7 @@ class ChipsInputController<T> extends ChangeNotifier {
       _query = query;
       _queryStream.add(ChipInput(query, userInput: userInput));
       notifyListeners();
-      Future.microtask(() => _loadSuggestions());
+//      Future.microtask(() => _loadSuggestions());
     }
   }
 
@@ -142,8 +145,16 @@ class ChipsInputController<T> extends ChangeNotifier {
       _suggestionToken = null;
     } else {
       final allTokens = _suggestions.expand((chip) {
-        return tokenizer(chip).where((token) => token != null).toSet().map((token) => MapEntry(chip, token));
-      });
+        return tokenizer(chip)
+            .where((token) {
+              return token != null;
+            })
+            .toSet()
+            .map((token) {
+              return MapEntry(chip, token);
+            });
+      }).toList();
+      _log.info("allTokens: ${allTokens.length}");
       final matchingToken = allTokens.firstWhere((entry) {
         return entry.value.toLowerCase().startsWith(query.toLowerCase());
       }, orElse: () => null);
