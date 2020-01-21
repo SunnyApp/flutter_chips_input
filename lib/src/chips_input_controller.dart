@@ -155,9 +155,15 @@ class ChipsInputController<T> extends ChangeNotifier {
             });
       }).toList();
       _log.info("allTokens: ${allTokens.length}");
-      final matchingToken = allTokens.firstWhere((entry) {
-        return entry.value.toLowerCase().startsWith(query.toLowerCase());
+
+      final exactMatch = allTokens.firstWhere((entry) {
+        return entry.value.toLowerCase() == query.toLowerCase();
       }, orElse: () => null);
+
+      final matchingToken = exactMatch ??
+          allTokens.firstWhere((entry) {
+            return entry.value.toLowerCase().startsWith(query.toLowerCase());
+          }, orElse: () => null);
 
       _suggestion = matchingToken?.key;
       _suggestionToken = matchingToken?.value;
