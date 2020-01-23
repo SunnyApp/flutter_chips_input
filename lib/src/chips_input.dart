@@ -465,22 +465,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
             ),
             if (_controller.enabled &&
                 _query.trim().isEmpty &&
-                _controller.suggestion == null &&
-                _controller.placeholder?.isNotEmpty == true)
-              Semantics(
-                label: "Action placeholder",
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      _controller.placeholder,
-                      style: baseStyle.copyWith(color: baseStyle.color.withOpacity(0.4)),
-                      semanticsLabel: "Placeholder",
-                    ),
-                  ],
-                ),
-              ),
+                _controller.suggestion.isEmpty &&
+                _controller.placeholder.isNotNullOrBlank)
+              ChipsInputPlaceholder(baseStyle: baseStyle, placeholder: _controller.placeholder),
           ],
         ),
       ),
@@ -509,7 +496,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
                   }
                 } else if (_accepting) {
                   // We are trying to select something
-                  if (_controller.suggestion != null) {
+                  if (_controller.suggestion.isNotEmpty) {
                     _controller.acceptSuggestion();
                   }
                 }
@@ -600,6 +587,26 @@ class _TextCursorState extends State<_TextCaret> with SingleTickerProviderStateM
           color: theme.primaryColor,
         ),
       ),
+    );
+  }
+}
+
+class ChipsInputPlaceholder extends StatelessWidget {
+  final String placeholder;
+  final TextStyle baseStyle;
+
+  const ChipsInputPlaceholder({Key key, @required this.placeholder, @required this.baseStyle}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          placeholder,
+          style: baseStyle.copyWith(color: baseStyle.color.withOpacity(0.4)),
+        ),
+      ],
     );
   }
 }
