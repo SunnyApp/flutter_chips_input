@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:after_layout/after_layout.dart';
+import 'package:collection_diff/list_diff_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input_controller.dart';
+import 'package:logging/logging.dart';
+import 'package:sunny_dart/sunny_dart.dart';
 
 /// Generates a list of suggestions given a query
 typedef GenerateSuggestions<T> = FutureOr<ChipSuggestions> Function(String query);
@@ -19,6 +24,8 @@ typedef PerformTextInputAction<T> = void Function(TextInputAction type);
 
 /// Tokenizes a chip to help provide inline completion
 typedef ChipTokenizer<T> = Iterable<String> Function(T input);
+
+typedef ChipIdentifier<T> = String Function(T input);
 
 /// Generic action performed on a chip
 typedef ChipAction<T> = void Function(T chip);
@@ -59,6 +66,7 @@ class ChipsInput<T> extends StatefulWidget {
     /// When an inline suggestion is present and tapped.
     this.onSuggestionTap,
     this.controller,
+    this.chipId,
   })  : initialValue = initialValue?.where((s) => s != null)?.toList(),
         assert(maxChips == null || initialValue.length <= maxChips),
         assert(controller == null || findSuggestions == null),
@@ -69,6 +77,7 @@ class ChipsInput<T> extends StatefulWidget {
 
   /// Allows external control of the data within this input
   final ChipsInputController<T> controller;
+  final ChipIdentifier<T> chipId;
   final InputDecoration decoration;
   final bool enabled;
   final String placeholder;
@@ -96,12 +105,17 @@ class ChipsInput<T> extends StatefulWidget {
   ChipsInputState<T> createState() => ChipsInputState<T>();
 }
 
-class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<ChipsInput<T>> implements TextInputClient {
+class ChipsInputState<T> extends State<ChipsInput<T>>
+    with TickerProviderStateMixin, AfterLayoutMixin<ChipsInput<T>>
+    implements TextInputClient {
+  final Logger log = Logger("chipsInputState");
   ChipsInputController<T> _controller;
   FocusNode _focusNode;
   TextInputConnection _connection;
   LayerLink _layerLink = LayerLink();
-  List<StreamSubscription> _streams = [];
+
+  /// Things that need to be cleaned up when we're done
+  List<VoidCallback> _disposers = [];
 
   bool get hasInputConnection => _connection != null && _connection.attached;
   GestureRecognizer _onSuggestionTap;
@@ -110,11 +124,44 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   String _lastDirectState;
 
+  /// A local copy of the chips that gets updated as diffs come in
+  List<T> _chips;
+  Map<int, List<T>> _deleting;
+  Map<int, List<T>> _adding;
+
   @override
   void initState() {
     super.initState();
+    _chips = [];
+    _deleting = {};
+    _adding = {};
     _controller = widget.controller ?? ChipsInputController<T>(widget.findSuggestions);
     _controller.enabled = widget.enabled;
+
+    _disposers.add(_controller.changes
+        .asyncMap((changes) {
+          // Handle these
+          setState(() {
+            changes.whereType<InsertDiff<T>>().forEach((insert) {
+              /// Add these to _chips
+              _adding.putIfAbsent(insert.index, () => []).addAll(insert.items);
+            });
+            changes.whereType<DeleteDiff<T>>().forEach((delete) {
+              /// Add these to _chips
+
+              for (int i = 0; i < delete.size; i++) {
+                final curr = _chips.tryGet(delete.index);
+                if (curr != null) {
+                  _deleting.putIfAbsent(delete.index + i, () => []).add(curr);
+                  _chips.removeAt(delete.index);
+                }
+              }
+            });
+          });
+        })
+        .listen((_) {}, cancelOnError: false)
+        .cancel);
+
     _controller.hideSuggestionOverlay ??= widget.hideSuggestionsOverlay;
     if (widget.initialValue != null) {
       _controller.addAll(widget.initialValue);
@@ -125,21 +172,21 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
     _controller.placeholder = widget.placeholder;
     _controller.addListener(_onChanged);
-    _streams.add(_controller.queryStream.listen((query) {
+    _disposers.add(_controller.queryStream.listen((query) {
       if (!query.userInput && _connection?.attached == true) {
         _lastDirectState = _chipReplacementText + query.text;
         _connection?.setEditingState(textEditingValue(_lastDirectState));
       }
       widget.onQueryChanged?.call(query.text, _controller);
-    }));
+    }, cancelOnError: false).cancel);
 
-    _streams.add(_controller.chipStream.listen((chips) {
+    _disposers.add(_controller.chipStream.listen((chips) {
       if (!chips.userInput && _connection?.attached == true) {
         _lastDirectState = _chipReplacementText + _controller.query;
         _connection?.setEditingState(textEditingValue(_lastDirectState));
       }
       widget.onChipsChanged?.call(_controller);
-    }));
+    }, cancelOnError: false).cancel);
 
     _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_onFocusChanged);
@@ -147,7 +194,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     if (widget.onSuggestionTap != null) {
       _onSuggestionTap = TapGestureRecognizer()
         ..onTap = () {
-          widget.onSuggestionTap(_controller.suggestion);
+          widget.onSuggestionTap(_controller.suggestion.item);
         };
     }
   }
@@ -161,7 +208,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
-    _streams.forEach((sub) => sub.cancel());
+    _disposers.forEach((disp) => disp());
     _closeInputConnectionIfNeeded();
     super.dispose();
   }
@@ -180,8 +227,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
       String.fromCharCodes(chips.expand((_) => [kObjectReplacementChar]));
 
   TextEditingValue get _textValue => textEditingValue(_chipReplacementText + _query);
-
-  List<T> get _chips => _controller.chips;
 
   String get _query => _controller.query ?? "";
 
@@ -324,17 +369,71 @@ class ChipsInputState<T> extends State<ChipsInput<T>> with AfterLayoutMixin<Chip
 
   @override
   Widget build(BuildContext context) {
-    var chipsChildren = _chips
-        .asMap()
-        .map((index, data) => MapEntry(index, widget.chipBuilder(context, _controller, index, data)))
-        .values
-        .where((data) => data != null)
+    final maxIndex = max(_chips.length - 1, max(this._deleting.keys.max(0), this._adding.keys.max(0)));
+    var chipsChildren = rangeOf(0, maxIndex)
+        .map((index) {
+          final data = _chips.tryGet(index);
+          return [
+            for (final deleting in this._deleting[index].orEmpty())
+              ChipsInputItemWidget(
+                key: Key(widget.chipId?.call(deleting) ?? "$deleting"),
+                item: deleting,
+                child: widget.chipBuilder(context, _controller, index, deleting),
+                status: ChipsInputItemStatus.remove,
+                vsync: this,
+              ),
+            if (data != null)
+              ChipsInputItemWidget(
+                key: Key(widget.chipId?.call(data) ?? "$data"),
+                item: data,
+                child: widget.chipBuilder(context, _controller, index, data),
+                status: ChipsInputItemStatus.ready,
+                vsync: this,
+              ),
+            for (final adding in this._adding[index].orEmpty())
+              ChipsInputItemWidget(
+                key: Key(widget.chipId?.call(adding) ?? "$adding"),
+                item: adding,
+                child: widget.chipBuilder(context, _controller, index, adding),
+                status: ChipsInputItemStatus.add,
+                vsync: this,
+              ),
+          ];
+        })
+        .flatten()
+        .whereNotNull()
+        .cast<Widget>()
         .toList();
 
+    // Trigger a migration for any in-transition widgets.  For sure a better way exists to do this;
+    if (this._adding.isNotEmpty) {
+      Future.delayed(30.ms, () {
+        /// On next frame
+        if (mounted)
+          setState(() {
+            this._adding.forEach((idx, items) {
+              items.forEach((_) => _chips.insertAll(idx, items));
+            });
+            this._adding.clear();
+          });
+      });
+    }
+
+    if (this._deleting.isNotEmpty) {
+      Future.delayed(300.ms, () {
+        /// On next frame
+        if (mounted)
+          setState(() {
+            this._deleting.forEach((idx, items) {
+              items.forEach((_) => _chips.tryRemove(idx));
+            });
+
+            this._deleting.clear();
+          });
+      });
+    }
     final theme = Theme.of(context);
     final baseStyle = _defaultTextStyle(widget, theme);
-//    final transparentText = textTheme.copyWith(color: Colors.transparent);
-//    final placeholder = textTheme.copyWith(color: textTheme.color.withOpacity(0.4));
 
     final queryText = _queryText;
     chipsChildren.add(
@@ -460,7 +559,7 @@ class _TextCaret extends StatefulWidget {
     Key key,
     this.duration = const Duration(milliseconds: 500),
     this.resumed = false,
-  }) : super(key: key);
+  }) : super(key: key ?? const Key("chips-input-caret"));
 
   final Duration duration;
   final bool resumed;
@@ -485,7 +584,7 @@ class _TextCursorState extends State<_TextCaret> with SingleTickerProviderStateM
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -544,6 +643,33 @@ class QueryText {
             ),
           ),
       ],
+    );
+  }
+}
+
+enum ChipsInputItemStatus { add, ready, remove }
+
+class ChipsInputItemWidget<T> extends StatelessWidget {
+  final T item;
+  final Widget child;
+  final ChipsInputItemStatus status;
+  final TickerProvider vsync;
+
+  ChipsInputItemWidget(
+      {@required Key key, @required this.item, @required this.child, @required this.vsync, this.status})
+      : assert(child != null),
+        super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSize(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(
+        width: status == ChipsInputItemStatus.ready ? null : 0,
+        child: Opacity(opacity: status == ChipsInputItemStatus.remove ? 0.0 : 1.0, child: child),
+      ),
+      vsync: vsync,
+      duration: 100.ms,
     );
   }
 }

@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:collection_diff/collection_diff.dart';
+import 'package:collection_diff/list_diff_model.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input.dart';
 import 'package:logging/logging.dart';
+import 'package:sunny_dart/sunny_dart.dart';
 
 final _log = Logger("chips_input");
 
@@ -13,11 +16,11 @@ class ChipsInputController<T> extends ChangeNotifier {
   String _query;
   final List<T> _chips = List<T>();
   List<T> _suggestions;
-  T _suggestion;
   ControllerStatus _status = ControllerStatus.closed;
-  String _suggestionToken;
+  Suggestion<T> _suggestion = Suggestion.empty();
   String _placeholder;
   bool enabled = true;
+
   bool get disabled => enabled != true;
 
   VoidCallback _requestKeyboard;
@@ -34,9 +37,11 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   set requestKeyboardCallback(VoidCallback callback) => this._requestKeyboard = callback;
+
   set hideKeyboardCallback(VoidCallback callback) => this._hideKeyboard = callback;
 
   final StreamController<ChipSuggestions<T>> _suggestionsStream;
+  final StreamController<ListDiffs<T>> _changeStream;
   final StreamController<ChipInput> _queryStream;
   final StreamController<ChipList<T>> _chipStream;
   final ChipTokenizer<T> tokenizer;
@@ -58,11 +63,12 @@ class ChipsInputController<T> extends ChangeNotifier {
         tokenizer = tokenizer ?? ((t) => ["$t"]),
         _suggestionsStream = StreamController.broadcast(sync: sync),
         _chipStream = StreamController.broadcast(sync: sync),
+        _changeStream = StreamController.broadcast(sync: sync),
         _queryStream = StreamController.broadcast(sync: sync);
 
   List<T> get chips => List.from(_chips, growable: false);
 
-  String get suggestionToken => _suggestionToken;
+  String get suggestionToken => _suggestion.highlightText;
 
   int get size => _chips.length;
 
@@ -86,6 +92,7 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   Stream<ChipSuggestions<T>> get suggestionStream => _suggestionsStream.stream;
+  Stream<ListDiffs<T>> get changes => _changeStream.stream;
 
   Stream<ChipInput> get queryStream => _queryStream.stream;
 
@@ -95,16 +102,18 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   String get query => _query ?? "";
 
-  T get suggestion => _suggestion;
+  Suggestion<T> get suggestion => _suggestion;
 
-  set suggestion(T suggestion) {
-    _suggestion = suggestion;
-    if (suggestion != null) {
-      _suggestionToken = tokenizer(suggestion)?.firstWhere(
-        (s) => s.toLowerCase().startsWith(query.toLowerCase()),
-        orElse: () => null,
-      );
+  set suggestion(Suggestion<T> suggestion) {
+    suggestion = suggestion ?? Suggestion.empty();
+    if (suggestion.isNotEmpty && suggestion.highlightText == null) {
+      /// Should we do this here??
+      suggestion = suggestion.copy(
+          highlightText: tokenizer(suggestion.item).orEmpty().where((s) {
+        return s.toLowerCase().startsWith(query.toLowerCase());
+      }).firstOrNull);
     }
+    _suggestion = suggestion;
     notifyListeners();
   }
 
@@ -121,7 +130,6 @@ class ChipsInputController<T> extends ChangeNotifier {
       _query = query;
       _queryStream.add(ChipInput(query, userInput: userInput));
       notifyListeners();
-//      Future.microtask(() => _loadSuggestions());
     }
   }
 
@@ -141,32 +149,41 @@ class ChipsInputController<T> extends ChangeNotifier {
     // Looks for the first suggestion that actually matches what the user is typing so we
     // can add an inline suggestion
     if (query.isEmpty) {
-      _suggestion = null;
-      _suggestionToken = null;
+      suggestion = Suggestion.empty();
     } else {
-      final allTokens = _suggestions.expand((chip) {
-        return tokenizer(chip)
-            .where((token) {
-              return token != null;
-            })
-            .toSet()
-            .map((token) {
-              return MapEntry(chip, token);
-            });
+      /// Provides us indexed access
+      final suggestions = [...?_suggestions];
+      final List<Map<String, String>> allTokens = _suggestions.map((chip) {
+        final itemTokens = tokenizer(chip).where((token) {
+          return token != null;
+        }).keyed((_) => _.toLowerCase());
+        return itemTokens;
       }).toList();
       _log.info("allTokens: ${allTokens.length}");
 
-      final exactMatch = allTokens.firstWhere((entry) {
-        return entry.value.toLowerCase() == query.toLowerCase();
-      }, orElse: () => null);
+      final matchingItem = allTokens.whereIndexed(
+        (entry) {
+          return entry.keys.any((s) => s.startsWith(query.toLowerCase()));
+        },
+      ).firstOrNull;
 
-      final matchingToken = exactMatch ??
-          allTokens.firstWhere((entry) {
-            return entry.value.toLowerCase().startsWith(query.toLowerCase());
-          }, orElse: () => null);
+      if (matchingItem != null) {
+        _suggestion = Suggestion.highlighted(
+            item: suggestions[matchingItem.index],
 
-      _suggestion = matchingToken?.key;
-      _suggestionToken = matchingToken?.value;
+            /// Probably the longest suggestion token would be best... this gives the most recognizability (remember that
+            /// all these tokens come from the same item anyway)
+            highlightText: matchingItem.value
+                .whereKeys((key) => key.startsWith(query.toLowerCase()))
+                .entries
+                .sorted((a, b) => a.key.length.compareTo(b.key.length))
+                .last
+                .value);
+
+        _log.info("Found suggestion: $_suggestion");
+      } else {
+        _suggestion = Suggestion.empty();
+      }
     }
     if (notify) {
       notifyListeners();
@@ -174,8 +191,8 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   setInlineSuggestion(T suggestion, {String suggestionToken, bool notify = false}) {
-    _suggestion = suggestion;
-    _suggestionToken = suggestionToken ?? tokenizer(suggestion).first;
+    _suggestion = Suggestion.highlighted(
+        item: suggestion, highlightText: suggestionToken ?? suggestionToken ?? tokenizer(suggestion).first);
     if (notify) {
       notifyListeners();
     }
@@ -184,99 +201,79 @@ class ChipsInputController<T> extends ChangeNotifier {
   ChipList<T> _currentChips(bool userInput) => ChipList<T>(List.from(_chips, growable: false), userInput: userInput);
 
   void removeAt(int index) {
-    _chips.removeAt(index);
-    _chipStream.add(_currentChips(false));
-    notifyListeners();
+    _applyDiff(() {
+      _chips.remove(index);
+    });
   }
 
   void deleteChip(T data) {
-    if (enabled) {
+    _applyDiff(() {
       _chips.remove(data);
-      _chipStream.add(_currentChips(false));
-      notifyListeners();
-    }
+    });
   }
 
   void acceptSuggestion({T suggestion}) {
     if (suggestionToken != null) {
-      final _toAdd = suggestion ?? this._suggestion;
-      _suggestion = null;
-      _suggestionToken = null;
+      final _toAdd = suggestion ?? this._suggestion.item;
+      _suggestion = Suggestion.empty();
       if (_toAdd != null) {
         addChip(_toAdd, resetQuery: true);
       }
     }
   }
 
-  void addChip(T data, {bool resetQuery = false}) {
-    if (enabled) {
-      _chips.add(data);
+  bool _applyDiff(void mutation(), {bool notify = true}) {
+    if (!enabled) return false;
+
+    final orig = [..._chips];
+    mutation();
+    final diffs = orig.differences([..._chips]);
+    if (diffs.isNotEmpty) {
+      _changeStream.add(diffs);
       _chipStream.add(_currentChips(false));
-      notifyListeners();
+      if (notify) notifyListeners();
     }
+    return diffs.isNotEmpty;
+  }
+
+  void addChip(T data, {bool resetQuery = false}) {
+    _applyDiff(() {
+      _chips.add(data);
+    });
+
     if (resetQuery) {
       resetSuggestions();
     }
   }
 
   bool syncChips(Iterable<T> newChips) {
-    bool changed = false;
+    final changed = _applyDiff(() {
+      _chips.clear();
+      _chips.addAll(newChips);
+    });
 
-    if (enabled) {
-      try {
-        final currSize = this._chips.length;
-        final newList = newChips.toList();
-        var i = 0;
-        for (; i < newChips.length; i++) {
-          final newItem = newList[i];
-          if (_chips.length > i) {
-            if (_chips[i] != newItem) {
-              changed = true;
-              _chips.removeAt(i);
-              _chips.insert(i, newItem);
-            }
-          } else {
-            changed = true;
-            _chips.add(newItem);
-          }
-        }
-
-        final trimSize = currSize - i;
-        if (trimSize > 0) {
-          Iterable.generate(trimSize).forEach((_) => _chips.removeLast());
-          changed = true;
-        }
-      } catch (e) {
-        print("Error updating list state: $e");
-        throw e;
-      }
-    }
-    if (changed) {
-      _chipStream.add(_currentChips(false));
-      notifyListeners();
-    }
     return changed;
   }
 
   void addAll(Iterable<T> values) {
-    values?.forEach((v) => _chips.add(v));
-    _chipStream.add(_currentChips(false));
-    notifyListeners();
+    _applyDiff(() {
+      values?.forEach((v) => _chips.add(v));
+    });
   }
 
   void resetSuggestions() {
-    _suggestion = null;
+    _suggestion = const Suggestion.empty();
     _query = null;
     _suggestions = [];
-    _suggestionsStream.add(ChipSuggestions.empty<T>());
+    _suggestionsStream.add(const ChipSuggestions.empty());
     _queryStream.add(ChipInput("", userInput: false));
     notifyListeners();
   }
 
   void pop() {
-    _chips.removeLast();
-    _chipStream.add(_currentChips(false));
-    notifyListeners();
+    _applyDiff(() {
+      _chips.removeLast();
+    });
   }
 
   initialize(BuildContext context, OverlayEntry entry) {

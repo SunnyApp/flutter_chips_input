@@ -12,6 +12,10 @@ dependencies:
     sdk: flutter
   logging: ^0.11.3+2
   after_layout: ^1.0.7+2
+  sunny_dart:
+    path: ../sunny_dart
+  collection_diff:
+    path: ../collection_diff
 
 dev_dependencies:
   flutter_test:

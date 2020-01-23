@@ -77,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               onInputAction: (_) {
                 if (controller.suggestion != null) {
-                  controller.addChip(controller.suggestion, resetQuery: true);
+                  controller.addChip(controller.suggestion.item, resetQuery: true);
                 }
               },
               inputConfiguration: TextInputConfiguration(
@@ -129,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               onInputAction: (_) {
                 if (controller.suggestion != null) {
-                  controller.addChip(controller.suggestion, resetQuery: true);
+                  controller.addChip(controller.suggestion.item, resetQuery: true);
                 }
               },
               inputConfiguration: TextInputConfiguration(
@@ -245,9 +245,10 @@ class _MyHomePageState extends State<MyHomePage> {
         orElse: () => null,
       );
       return ChipSuggestions<AppProfile>(
-          suggestions: foundResults, match: foundResults.length == 1 && exactMatch != null ? exactMatch : null);
+          suggestions: foundResults,
+          match: foundResults.length == 1 && exactMatch != null ? Suggestion(item: exactMatch) : Suggestion.empty());
     } else {
-      return ChipSuggestions.empty<AppProfile>();
+      return const ChipSuggestions.empty();
     }
   }
 }
