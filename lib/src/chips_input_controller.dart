@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input.dart';
 import 'package:logging/logging.dart';
+import 'package:stream_transform/stream_transform.dart';
 import 'package:sunny_dart/sunny_dart.dart';
 
 final _log = Logger("chips_input");
@@ -56,6 +57,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   ChipsInputController(
     this.findSuggestions, {
+    bool suggestOnType = true,
     bool sync = false,
     ChipTokenizer<T> tokenizer,
     this.hideSuggestionOverlay = false,
@@ -64,7 +66,13 @@ class ChipsInputController<T> extends ChangeNotifier {
         _suggestionsStream = StreamController.broadcast(sync: sync),
         _chipStream = StreamController.broadcast(sync: sync),
         _changeStream = StreamController.broadcast(sync: sync),
-        _queryStream = StreamController.broadcast(sync: sync);
+        _queryStream = StreamController.broadcast(sync: sync) {
+    if (suggestOnType == true) {
+      _queryStream.stream.debounce(100.ms).asyncMap((input) async {
+        loadSuggestions();
+      }).listen((_) {}, cancelOnError: false);
+    }
+  }
 
   List<T> get chips => List.from(_chips, growable: false);
 
@@ -133,7 +141,7 @@ class ChipsInputController<T> extends ChangeNotifier {
     }
   }
 
-  _loadSuggestions() async {
+  loadSuggestions() async {
     final ChipSuggestions<T> results = await findSuggestions(_query);
     _suggestions = results.suggestions?.where((suggestion) => !_chips.contains(suggestion))?.toList(growable: false);
     if (results.match != null) {
@@ -202,7 +210,7 @@ class ChipsInputController<T> extends ChangeNotifier {
 
   void removeAt(int index) {
     _applyDiff(() {
-      _chips.remove(index);
+      _chips.removeAt(index);
     });
   }
 

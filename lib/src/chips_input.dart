@@ -376,7 +376,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
           return [
             for (final deleting in this._deleting[index].orEmpty())
               ChipsInputItemWidget(
-                key: Key(widget.chipId?.call(deleting) ?? "$deleting"),
+                key: Key("chip-input-${widget.chipId?.call(deleting) ?? "$deleting"}"),
                 item: deleting,
                 child: widget.chipBuilder(context, _controller, index, deleting),
                 status: ChipsInputItemStatus.remove,
@@ -384,7 +384,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
               ),
             if (data != null)
               ChipsInputItemWidget(
-                key: Key(widget.chipId?.call(data) ?? "$data"),
+                key: Key("chip-input-${widget.chipId?.call(data) ?? "$data"}"),
                 item: data,
                 child: widget.chipBuilder(context, _controller, index, data),
                 status: ChipsInputItemStatus.ready,
@@ -392,7 +392,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
               ),
             for (final adding in this._adding[index].orEmpty())
               ChipsInputItemWidget(
-                key: Key(widget.chipId?.call(adding) ?? "$adding"),
+                key: Key("chip-input-${widget.chipId?.call(adding) ?? "$adding"}"),
                 item: adding,
                 child: widget.chipBuilder(context, _controller, index, adding),
                 status: ChipsInputItemStatus.add,
@@ -546,7 +546,7 @@ class _TextCaret extends StatefulWidget {
     Key key,
     this.duration = const Duration(milliseconds: 500),
     this.resumed = false,
-  }) : super(key: key ?? const Key("chips-input-caret"));
+  }) : super(key: key);
 
   final Duration duration;
   final bool resumed;

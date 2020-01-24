@@ -16,6 +16,7 @@ dependencies:
     path: ../sunny_dart
   collection_diff:
     path: ../collection_diff
+  stream_transform: ^0.0.9
 
 dev_dependencies:
   flutter_test:
