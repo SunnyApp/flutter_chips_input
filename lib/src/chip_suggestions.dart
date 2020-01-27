@@ -7,9 +7,15 @@ class ChipSuggestions<T> {
   final Suggestion<T> match;
 
   const ChipSuggestions({this.suggestions, this.match});
+
   const ChipSuggestions.empty()
       : suggestions = const [],
         match = null;
+
+  ChipSuggestions<T> removeAll(Iterable<T> chips) {
+    final set = {...?chips};
+    return ChipSuggestions(match: match, suggestions: [...suggestions.where((s) => !set.contains(s))]);
+  }
 }
 
 class Suggestion<T> {
@@ -35,9 +41,10 @@ class Suggestion<T> {
         highlightText = null;
 
   bool get isNotEmpty => item != null;
+
   bool get isEmpty => item == null;
 
-  Suggestion copy({
+  Suggestion<T> copy({
     T suggestion,
     String highlightText,
   }) {

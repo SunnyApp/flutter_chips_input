@@ -34,13 +34,13 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    controller = ChipsInputController<AppProfile>(_findSuggestions);
+    controller = ChipsInputController<AppProfile>(findSuggestions: _findSuggestions);
     controller2 = ChipsInputController<AppProfile>(
-      _findSuggestions,
+      findSuggestions: _findSuggestions,
       hideSuggestionOverlay: true,
     );
-    controller.queryStream.listen((query) {
-      _textController.text = query.text;
+    controller.queryStream.after.listen((query) {
+      _textController.text = query;
     });
   }
 

@@ -1,119 +1,154 @@
 import 'dart:async';
 
 import 'package:collection_diff/collection_diff.dart';
-import 'package:collection_diff/list_diff_model.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input.dart';
 import 'package:logging/logging.dart';
+import 'package:observable_collections/observable_collections.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'package:sunny_dart/sunny_dart.dart';
 
-final _log = Logger("chips_input");
+const defaultDebugLabel = 'chipsInput';
+final _log = Logger(defaultDebugLabel);
 
-class ChipsInputController<T> extends ChangeNotifier {
+
+/// Controls the chips input, allows for fine-grained control of various aspects
+class ChipsInputController<T> extends ChangeNotifier with Disposable {
+  /// The callback to search for suggestions based on chips or query
   final GenerateSuggestions<T> findSuggestions;
-  String _query;
-  final List<T> _chips = List<T>();
-  List<T> _suggestions;
+
+  /// The current state of the query (text the user types in)
+  final AsyncValueStream<String> _query;
+
+  /// The current list of chips to display
+  final SunnyObservableList<T> chips;
+  final SyncStream<ChipSuggestions<T>> _suggestions;
+  final SyncStream<Suggestion<T>> _suggestion;
+
+  /// Current status of the whole control
   ControllerStatus _status = ControllerStatus.closed;
-  Suggestion<T> _suggestion = Suggestion.empty();
-  String _placeholder;
+
+  final SyncStream<String> _placeholder;
   bool enabled = true;
 
   bool get disabled => enabled != true;
 
+  /// Callback to request keyboard - helps keep this control separated from the view
   VoidCallback _requestKeyboard;
+
+  /// Callback to hide keyboard - helps keep this control separated from the view
   VoidCallback _hideKeyboard;
 
+  /// Current textInputConnection
   TextInputConnection connection;
 
-  requestKeyboard() {
-    _requestKeyboard?.call();
-  }
-
-  hideKeyboard() {
-    _hideKeyboard?.call();
-  }
-
-  set requestKeyboardCallback(VoidCallback callback) => this._requestKeyboard = callback;
-
-  set hideKeyboardCallback(VoidCallback callback) => this._hideKeyboard = callback;
-
-  final StreamController<ChipSuggestions<T>> _suggestionsStream;
-  final StreamController<ListDiffs<T>> _changeStream;
-  final StreamController<ChipInput> _queryStream;
-  final StreamController<ChipList<T>> _chipStream;
+  /// Tokenizes each chip to support full-text searching
   final ChipTokenizer<T> tokenizer;
   OverlayEntry _overlayEntry;
+
+  /// The current build context for this control
   BuildContext _context;
 
   bool hideSuggestionOverlay;
 
-  ControllerStatus get status => _status;
+  final String debugLabel;
 
-  String get placeholder => _placeholder;
-
-  ChipsInputController(
-    this.findSuggestions, {
+  ChipsInputController({
+    GenerateSuggestions<T> findSuggestions,
+    String debugName,
     bool suggestOnType = true,
-    bool sync = false,
+    String placeholder,
+    String query,
+    Iterable<T> chips,
+    DiffEquality<T> equality,
     ChipTokenizer<T> tokenizer,
-    this.hideSuggestionOverlay = false,
-  })  : assert(findSuggestions != null),
+    bool hideSuggestionOverlay,
+  }) : this._(
+          debugName ?? defaultDebugLabel,
+          chips ?? [],
+          placeholder,
+          query,
+          findSuggestions ?? ((_) => const ChipSuggestions.empty()),
+          equality ?? const DiffEquality(),
+          suggestOnType,
+          hideSuggestionOverlay ?? false,
+          tokenizer ?? ((t) => ["$t"]),
+        );
+
+  ChipsInputController._(
+    this.debugLabel,
+    Iterable<T> chips,
+    String placeholder,
+    String query,
+    this.findSuggestions,
+    DiffEquality<T> equality,
+    bool suggestOnType,
+    this.hideSuggestionOverlay,
+    ChipTokenizer<T> tokenizer,
+  )   : assert(findSuggestions != null),
+        chips = SunnyObservableList.of([...?chips], diffEquality: equality, debugLabel: "$debugLabel => chips"),
+        _placeholder = SyncStream.controller(
+          debugName: "$debugLabel => placeholder",
+          initialValue: placeholder,
+        ),
+        _suggestions = SyncStream.controller(
+          debugName: "$debugLabel => suggestions",
+          initialValue: const ChipSuggestions.empty(),
+        ),
+        _suggestion = SyncStream.controller(debugName: "$debugLabel => suggestions"),
         tokenizer = tokenizer ?? ((t) => ["$t"]),
-        _suggestionsStream = StreamController.broadcast(sync: sync),
-        _chipStream = StreamController.broadcast(sync: sync),
-        _changeStream = StreamController.broadcast(sync: sync),
-        _queryStream = StreamController.broadcast(sync: sync) {
+        _query = AsyncValueStream(
+          debugName: "$debugLabel => query",
+          transform: (input) => input.debounce(300.ms),
+          initialValue: query,
+        ) {
     if (suggestOnType == true) {
-      _queryStream.stream.debounce(100.ms).asyncMap((input) async {
+      registerStream(_query.flatten().debounce(200.ms).asyncMap((input) async {
         loadSuggestions();
-      }).listen((_) {}, cancelOnError: false);
+      }));
     }
   }
 
-  List<T> get chips => List.from(_chips, growable: false);
+  ControllerStatus get status => _status;
 
-  String get suggestionToken => _suggestion.highlightText;
+  String get placeholder => _placeholder.current;
 
-  int get size => _chips.length;
+  String get suggestionToken => _suggestion.current?.highlightText;
+
+  int get size => chips.length;
 
   set placeholder(String placeholder) {
-    this._placeholder = placeholder;
+    this._placeholder.update(placeholder);
     notifyListeners();
   }
 
-  updateChips(Iterable<T> chips, {@required bool userInput}) {
-    _chips.clear();
-    _chips.addAll(chips);
-    _chipStream.add(_currentChips(userInput));
+  updateChips(Iterable<T> chips) {
+    this.chips.sync(chips);
     notifyListeners();
   }
 
   dispose() {
     super.dispose();
-    _suggestionsStream.close();
-    _queryStream.close();
-    _chipStream.close();
+    chips.dispose();
+    _placeholder.disposeAll();
+    _query.dispose();
+    _suggestions.dispose();
   }
 
-  Stream<ChipSuggestions<T>> get suggestionStream => _suggestionsStream.stream;
-  Stream<ListDiffs<T>> get changes => _changeStream.stream;
+  ValueStream<ChipSuggestions<T>> get suggestionStream => _suggestions;
 
-  Stream<ChipInput> get queryStream => _queryStream.stream;
+  ValueStream<String> get queryStream => _query;
 
-  Stream<ChipList<T>> get chipStream => _chipStream.stream;
+  List<T> get suggestions => List.from(_suggestions.current?.suggestions ?? [], growable: false);
 
-  List<T> get suggestions => List.from(_suggestions ?? [], growable: false);
+  String get query => _query.current ?? "";
 
-  String get query => _query ?? "";
-
-  Suggestion<T> get suggestion => _suggestion;
+  Suggestion<T> get suggestion => _suggestion.current ?? const Suggestion.empty();
 
   set suggestion(Suggestion<T> suggestion) {
-    suggestion = suggestion ?? Suggestion.empty();
+    suggestion ??= Suggestion<T>.empty();
     if (suggestion.isNotEmpty && suggestion.highlightText == null) {
       /// Should we do this here??
       suggestion = suggestion.copy(
@@ -121,47 +156,46 @@ class ChipsInputController<T> extends ChangeNotifier {
         return s.toLowerCase().startsWith(query.toLowerCase());
       }).firstOrNull);
     }
-    _suggestion = suggestion;
+    _suggestion.current = suggestion;
     notifyListeners();
   }
 
   set suggestions(Iterable<T> suggestions) {
-    _suggestions = suggestions;
-
-    calculateInlineSuggestion(_suggestions);
-    _suggestionsStream.add(ChipSuggestions(suggestions: suggestions));
+    final suggest = ChipSuggestions<T>(suggestions: [...?suggestions]);
+    calculateInlineSuggestion(suggest);
+    _suggestions.current = suggest;
     notifyListeners();
   }
 
-  setQuery(String query, {bool userInput = false}) {
-    if (query != _query) {
-      _query = query;
-      _queryStream.add(ChipInput(query, userInput: userInput));
+  setQuery(String query) async {
+    if (query != _query.current) {
+      await _query.update(() async => query);
       notifyListeners();
+    } else {
+      _log.info("No update for $query");
     }
   }
 
   loadSuggestions() async {
-    final ChipSuggestions<T> results = await findSuggestions(_query);
-    _suggestions = results.suggestions?.where((suggestion) => !_chips.contains(suggestion))?.toList(growable: false);
+    final ChipSuggestions<T> results = (await findSuggestions(_query.current)).removeAll(chips);
     if (results.match != null) {
-      _suggestion = results.match;
+      suggestion = results.match;
     } else {
-      calculateInlineSuggestion(_suggestions);
+      calculateInlineSuggestion(_suggestions.current);
     }
-    _suggestionsStream.add(results);
+    _suggestions.current = results;
     notifyListeners();
   }
 
-  calculateInlineSuggestion(Iterable<T> _suggestions, {bool notify = false}) {
+  calculateInlineSuggestion(ChipSuggestions<T> _chipSuggest, {bool notify = false}) {
     // Looks for the first suggestion that actually matches what the user is typing so we
     // can add an inline suggestion
     if (query.isEmpty) {
       suggestion = Suggestion.empty();
     } else {
       /// Provides us indexed access
-      final suggestions = [...?_suggestions];
-      final List<Map<String, String>> allTokens = _suggestions.map((chip) {
+      final suggestions = [...?_chipSuggest?.suggestions];
+      final List<Map<String, String>> allTokens = suggestions.map((chip) {
         final itemTokens = tokenizer(chip).where((token) {
           return token != null;
         }).keyed((_) => _.toLowerCase());
@@ -176,7 +210,7 @@ class ChipsInputController<T> extends ChangeNotifier {
       ).firstOrNull;
 
       if (matchingItem != null) {
-        _suggestion = Suggestion.highlighted(
+        suggestion = Suggestion.highlighted(
             item: suggestions[matchingItem.index],
 
             /// Probably the longest suggestion token would be best... this gives the most recognizability (remember that
@@ -184,13 +218,13 @@ class ChipsInputController<T> extends ChangeNotifier {
             highlightText: matchingItem.value
                 .whereKeys((key) => key.startsWith(query.toLowerCase()))
                 .entries
-                .sorted((a, b) => a.key.length.compareTo(b.key.length))
+                .sortedBy((a, b) => a.key.length.compareTo(b.key.length))
                 .last
                 .value);
 
         _log.info("Found suggestion: $_suggestion");
       } else {
-        _suggestion = Suggestion.empty();
+        suggestion = Suggestion.empty();
       }
     }
     if (notify) {
@@ -199,53 +233,49 @@ class ChipsInputController<T> extends ChangeNotifier {
   }
 
   setInlineSuggestion(T suggestion, {String suggestionToken, bool notify = false}) {
-    _suggestion = Suggestion.highlighted(
+    this.suggestion = Suggestion.highlighted(
         item: suggestion, highlightText: suggestionToken ?? suggestionToken ?? tokenizer(suggestion).first);
     if (notify) {
       notifyListeners();
     }
   }
 
-  ChipList<T> _currentChips(bool userInput) => ChipList<T>(List.from(_chips, growable: false), userInput: userInput);
-
   void removeAt(int index) {
-    _applyDiff(() {
+    _applyDiff((_chips) {
       _chips.removeAt(index);
     });
   }
 
   void deleteChip(T data) {
-    _applyDiff(() {
+    _applyDiff((_chips) {
       _chips.remove(data);
     });
   }
 
   void acceptSuggestion({T suggestion}) {
     if (suggestionToken != null) {
-      final _toAdd = suggestion ?? this._suggestion.item;
-      _suggestion = Suggestion.empty();
-      if (_toAdd != null) {
-        addChip(_toAdd, resetQuery: true);
+      final _currentSuggestion = suggestion ?? this.suggestion.item;
+      this.suggestion = Suggestion.empty();
+      if (_currentSuggestion != null) {
+        addChip(_currentSuggestion, resetQuery: true);
       }
     }
   }
 
-  bool _applyDiff(void mutation(), {bool notify = true}) {
+  Future<bool> _applyDiff(void mutation(List<T> copy), {bool notify = true}) async {
     if (!enabled) return false;
 
-    final orig = [..._chips];
-    mutation();
-    final diffs = orig.differences([..._chips]);
+    final copy = [...this.chips];
+    mutation(copy);
+    final diffs = await this.chips.sync(copy);
     if (diffs.isNotEmpty) {
-      _changeStream.add(diffs);
-      _chipStream.add(_currentChips(false));
       if (notify) notifyListeners();
     }
     return diffs.isNotEmpty;
   }
 
-  void addChip(T data, {bool resetQuery = false}) {
-    _applyDiff(() {
+  addChip(T data, {bool resetQuery = false}) async {
+    await _applyDiff((_chips) {
       _chips.add(data);
     });
 
@@ -254,8 +284,8 @@ class ChipsInputController<T> extends ChangeNotifier {
     }
   }
 
-  bool syncChips(Iterable<T> newChips) {
-    final changed = _applyDiff(() {
+  Future<bool> syncChips(Iterable<T> newChips) async {
+    final changed = await _applyDiff((_chips) {
       _chips.clear();
       _chips.addAll(newChips);
     });
@@ -263,23 +293,21 @@ class ChipsInputController<T> extends ChangeNotifier {
     return changed;
   }
 
-  void addAll(Iterable<T> values) {
-    _applyDiff(() {
+  Future<bool> addAll(Iterable<T> values) async {
+    return await _applyDiff((_chips) {
       values?.forEach((v) => _chips.add(v));
     });
   }
 
   void resetSuggestions() {
-    _suggestion = const Suggestion.empty();
-    _query = null;
-    _suggestions = [];
-    _suggestionsStream.add(const ChipSuggestions.empty());
-    _queryStream.add(ChipInput("", userInput: false));
+    suggestion = const Suggestion.empty();
+    _query.current = null;
+    _suggestions.current = ChipSuggestions.empty();
     notifyListeners();
   }
 
-  void pop() {
-    _applyDiff(() {
+  Future<bool> pop() {
+    return _applyDiff((_chips) {
       _chips.removeLast();
     });
   }
@@ -338,21 +366,14 @@ class ChipsInputController<T> extends ChangeNotifier {
       this.open();
     }
   }
+
+  requestKeyboard() => _requestKeyboard?.call();
+
+  hideKeyboard() => _hideKeyboard?.call();
+
+  set requestKeyboardCallback(VoidCallback callback) => this._requestKeyboard = callback;
+
+  set hideKeyboardCallback(VoidCallback callback) => this._hideKeyboard = callback;
 }
 
 enum ControllerStatus { open, closed, opening }
-
-/// Helps to detect input that came from the user's keyboard so we don't infinitely update the text box
-class ChipInput {
-  final String text;
-  final bool userInput;
-
-  ChipInput(this.text, {this.userInput});
-}
-
-class ChipList<T> {
-  final Iterable<T> chips;
-  final bool userInput;
-
-  ChipList(this.chips, {@required this.userInput});
-}

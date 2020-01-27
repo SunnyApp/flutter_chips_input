@@ -5,7 +5,7 @@ author: Danvick Miller <danvickmiller@gmail.com>
 homepage: https://github.com/danvick/flutter_chips_input
 
 environment:
-  sdk: ">=2.5.0 <3.0.0"
+  sdk: ">=2.6.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -17,6 +17,8 @@ dependencies:
   collection_diff:
     path: ../collection_diff
   stream_transform: ^0.0.9
+  observable_collections:
+    path: ../observable_collections
 
 dev_dependencies:
   flutter_test:
