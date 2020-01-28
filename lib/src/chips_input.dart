@@ -203,6 +203,15 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
               /// Add these to _chips
               _adding.putIfAbsent(insert.index, () => []).addAll(insert.items);
             });
+            changes.whereType<ReplaceDiff<T>>().forEach((replace) {
+              for (int i = 0; i < replace.size; i++) {
+                final curr = _chips.tryGet(replace.index + i);
+                if (curr != null) {
+                  _deleting.putIfAbsent(replace.index + i, () => []).add(curr);
+                  _chips[replace.index] = replace.items[i];
+                }
+              }
+            });
             changes.whereType<DeleteDiff<T>>().forEach((delete) {
               /// Add these to _chips
 
@@ -224,7 +233,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     _controller.hideKeyboardCallback = () => _closeInputConnectionIfNeeded();
     _controller.placeholder = widget.placeholder;
     widget.query?.let((String _) => _controller.setQuery(_));
-    _disposers.add(_controller.queryStream.flatten().listen((query) {
+
+    /// We debounce the query stream that comes back from the controller to iron out any weird competition
+    _disposers.add(_controller.queryStream.flatten().debounce(200.ms).listen((query) {
       if (_connection?.attached == true) {
         _lastDirectState = _chipReplacementText + query;
         _connection?.setEditingState(textEditingValue(_lastDirectState));
@@ -253,20 +264,15 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
   @override
   void dispose() {
-    _controller.removeListener(_onChanged);
-    if (widget.controller == null) {
-      _controller.dispose();
-    }
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
     _disposers.forEach((disp) => disp());
     _closeInputConnectionIfNeeded();
+    if (widget.controller == null) {
+      _controller.dispose().then((_) {});
+    }
     super.dispose();
-  }
-
-  _onChanged() {
-    setState(() {});
   }
 
   int _countReplacements(String value) {
@@ -310,7 +316,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     setState(() {
       _query = inputValue ?? "";
     });
-    _controller.setQuery(inputValue);
+    if (mounted) {
+      _controller.setQuery(inputValue);
+    }
   }
 
   void _openInputConnection() {
@@ -461,7 +469,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
       Future.delayed(30.ms, () {
         /// On next frame
         this._adding.forEach((idx, items) {
-           _chips.insertAll(idx, items);
+          _chips.insertAll(idx, items);
         });
         this._adding.clear();
 
@@ -473,10 +481,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
     if (this._deleting.isNotEmpty) {
       Future.delayed(300.ms, () {
-        this._deleting.forEach((idx, items) {
-          items.forEach((_) => _chips.tryRemove(idx));
-        });
-
         this._deleting.clear();
 
         /// On next frame
