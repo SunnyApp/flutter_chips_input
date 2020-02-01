@@ -66,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 AppProfile(
                     'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
+              id: "app-profile",
               controller: controller,
               placeholder: "Search contacts",
               autofocus: true,
@@ -97,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   avatar: CircleAvatar(
                     backgroundImage: NetworkImage(profile.imageUrl),
                   ),
-                  onDeleted: () => controller.deleteChip(profile),
+                  onDeleted: () => controller.deleteChip(profile, resetQuery: true),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
               },
@@ -118,6 +119,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 AppProfile(
                     'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
+              id: "app-profile-2",
               controller: controller2,
               placeholder: "Search contacts",
               autofocus: true,
@@ -149,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   avatar: CircleAvatar(
                     backgroundImage: NetworkImage(profile.imageUrl),
                   ),
-                  onDeleted: () => controller.deleteChip(profile),
+                  onDeleted: () => controller.deleteChip(profile, resetQuery: true),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
               },

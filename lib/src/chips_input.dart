@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:collection_diff/list_diff_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -44,6 +45,7 @@ typedef OnLostFocus<T> = void Function(ChipsInputController<T> controller);
 class ChipsInput<T> extends StatefulWidget {
   ChipsInput({
     Key key,
+    @required this.id,
 
     /// The chips that should start in the input.  If a controller is also provided, this will perform a sync once the
     /// component loads for the first time
@@ -110,8 +112,12 @@ class ChipsInput<T> extends StatefulWidget {
     this.chipId,
   })  : initialValue = initialValue?.where((s) => s != null)?.toList(),
         assert(maxChips == null || initialValue.length <= maxChips),
+        assert(id != null),
         assert(controller == null || findSuggestions == null),
-        super(key: key);
+        super(key: key ?? Key("chips-input-$id"));
+
+  /// An identifier that allows to reference internals better
+  final String id;
 
   /// Generates tokens for a chip.  If this is provided, then inline suggestions will show up.
   final ChipTokenizer<T> chipTokenizer;
@@ -165,9 +171,11 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
   Size size;
 
+  /// Local copy of the chips+query
   String _lastDirectState;
 
-  String _query = "";
+  /// Local copy of the current state
+  QueryText _queryText;
 
   /// A local copy of the chips that gets updated as diffs come in
   List<T> _chips;
@@ -180,7 +188,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     _chips = [];
     _deleting = {};
     _adding = {};
-    _query = widget.query ?? "";
+    _queryText = QueryText();
+    _queryText.query = widget.query ?? "";
+
     _controller = widget.controller ??
         ChipsInputController<T>(
           findSuggestions: widget.findSuggestions,
@@ -234,10 +244,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     _controller.placeholder = widget.placeholder;
     widget.query?.let((String _) => _controller.setQuery(_));
 
-    /// We debounce the query stream that comes back from the controller to iron out any weird competition
-    _disposers.add(_controller.queryStream.flatten().debounce(200.ms).listen((query) {
-      if (_connection?.attached == true) {
-        _lastDirectState = _chipReplacementText + query;
+    /// We debounce the query stream that comes back from the controller to iron out any weird contention
+    _disposers.add(_controller.queryStream.flatten().debounce(50.ms).listen((query) {
+      /// For now, we'll only update reset states
+      if (_connection?.attached == true && query.isNullOrBlank) {
+        _lastDirectState = _chipReplacementText;
+        _queryText.query = "";
         _connection?.setEditingState(textEditingValue(_lastDirectState));
       }
       widget.onQueryChanged?.call(query, _controller);
@@ -245,10 +257,19 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
     _disposers.add(_controller.chips.changeStream.flatten().debounce(100.ms).listen((chips) {
       if (_connection?.attached == true) {
-        _lastDirectState = _chipReplacementText + _controller.query;
+        _lastDirectState = _chipReplacementText + _queryText.query;
         _connection?.setEditingState(textEditingValue(_lastDirectState));
       }
       widget.onChipsChanged?.call(_controller);
+    }, cancelOnError: false).cancel);
+
+    _disposers.add(_controller.suggestionStream.flatten().debounce(100.ms).listen((_suggestion) {
+      if (_suggestion == null) {
+        _queryText.suggestion = null;
+      } else {
+        final token = _suggestion.highlightText;
+        _queryText.suggestion = token;
+      }
     }, cancelOnError: false).cancel);
 
     _focusNode = widget.focusNode ?? FocusNode();
@@ -284,7 +305,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   String _chipReplacementTextFor(Iterable<T> chips) =>
       String.fromCharCodes(chips.expand((_) => [kObjectReplacementChar]));
 
-  TextEditingValue get _textValue => textEditingValue(_chipReplacementText + _query);
+  TextEditingValue get _textValue => textEditingValue(_chipReplacementText + _queryText.query);
 
   /// Implemented from [TextInputClient]
   @override
@@ -307,15 +328,16 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     bool isUserInput = _lastDirectState == value.text;
     _lastDirectState = null;
     String newText = value.text;
+    final inputValue = String.fromCharCodes(newText.codeUnits.where((c) => c != kObjectReplacementChar));
     final oldCount = _chips.length;
     final newCount = _countReplacements(newText);
-    if (isUserInput && newCount < oldCount) {
-      _controller.updateChips(_chips.take(newCount));
+    if (isUserInput && newCount < oldCount && inputValue.isNotNullOrBlank) {
+      // If resetQuery = true here, then it ends up removing some chip udpates
+      // as soon as they happen
+      _controller.updateChips(_chips.take(newCount), resetQuery: false);
     }
-    final inputValue = String.fromCharCodes(newText.codeUnits.where((c) => c != kObjectReplacementChar));
-    setState(() {
-      _query = inputValue ?? "";
-    });
+
+    _queryText.query = inputValue ?? "";
     if (mounted) {
       _controller.setQuery(inputValue);
     }
@@ -373,7 +395,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     _controller.initialize(context, OverlayEntry(
       builder: (context) {
         return StreamBuilder(
-          stream: _controller.suggestionStream.flatten(),
+          stream: _controller.suggestionsStream.flatten(),
           builder: (BuildContext context, AsyncSnapshot<ChipSuggestions<T>> snapshot) {
             final RenderBox box = inputCtx.findRenderObject() as RenderBox;
             size = box.size;
@@ -416,119 +438,15 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     }
   }
 
-  QueryText get _queryText {
-    final suggestionToken = _controller.suggestionToken;
-    final q = _query;
-    if (suggestionToken?.toLowerCase()?.startsWith(_query?.toLowerCase()) == true) {
-      return QueryText(q, suggestionToken);
-    } else {
-      return QueryText(q);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final maxIndex = max(_chips.length - 1, max(this._deleting.keys.max(0), this._adding.keys.max(0)));
-    var chipsChildren = rangeOf(0, maxIndex)
-        .map((index) {
-          final data = _chips.tryGet(index);
-          return [
-            for (final deleting in this._deleting[index].orEmpty())
-              ChipsInputItemWidget(
-                key: Key("chip-input-${widget.chipId?.call(deleting) ?? "$deleting"}"),
-                item: deleting,
-                child: widget.chipBuilder(context, _controller, index, deleting),
-                status: ChipsInputItemStatus.remove,
-                vsync: this,
-              ),
-            if (data != null)
-              ChipsInputItemWidget(
-                key: Key("chip-input-${widget.chipId?.call(data) ?? "$data"}"),
-                item: data,
-                child: widget.chipBuilder(context, _controller, index, data),
-                status: ChipsInputItemStatus.ready,
-                vsync: this,
-              ),
-            for (final adding in this._adding[index].orEmpty())
-              ChipsInputItemWidget(
-                key: Key("chip-input-${widget.chipId?.call(adding) ?? "$adding"}"),
-                item: adding,
-                child: widget.chipBuilder(context, _controller, index, adding),
-                status: ChipsInputItemStatus.add,
-                vsync: this,
-              ),
-          ];
-        })
-        .flatten()
-        .whereNotNull()
-        .cast<Widget>()
-        .toList();
-
-    // Trigger a migration for any in-transition widgets.  For sure a better way exists to do this;
-    if (this._adding.isNotEmpty) {
-      Future.delayed(30.ms, () {
-        /// On next frame
-        this._adding.forEach((idx, items) {
-          _chips.insertAll(idx, items);
-        });
-        this._adding.clear();
-
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
-
-    if (this._deleting.isNotEmpty) {
-      Future.delayed(300.ms, () {
-        this._deleting.clear();
-
-        /// On next frame
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
     final theme = Theme.of(context);
     final baseStyle = _defaultTextStyle(widget, theme);
 
     final queryText = _queryText;
-    chipsChildren.add(
-      Container(
-        height: 28.0,
-        child: Stack(
-          alignment: AlignmentDirectional.centerStart,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(_query ?? "", style: baseStyle.copyWith(color: Colors.transparent)),
-                _TextCaret(resumed: _focusNode.hasFocus),
-              ],
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Semantics(
-                  label: "Action Suggestion",
-                  child: Semantics(
-                    child: RichText(text: queryText.textSpan(baseStyle, _onSuggestionTap)),
-                    label: "${queryText.suggestion}",
-                  ),
-                ),
-              ],
-            ),
-            if (_controller.enabled &&
-                _query.trim().isEmpty &&
-                _controller.suggestion.isEmpty &&
-                _controller.placeholder.isNotNullOrBlank)
-              ChipsInputPlaceholder(baseStyle: baseStyle, placeholder: _controller.placeholder),
-          ],
-        ),
-      ),
-    );
+
+    /// Migrates adding/deleting
+    WidgetsBinding.instance.addPostFrameCallback(_postFrameMigration);
 
     bool _deleting = false;
     bool _accepting = false;
@@ -543,10 +461,10 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
                 if (_deleting) {
                   _deleting = false;
                   // other way??
-                  if (_query.isNotEmpty == true) {
-                    _controller.setQuery("");
+                  if (_queryText.query.isNotNullOrBlank) {
+                    _controller.resetSuggestions();
                   } else if (_controller.size > 0) {
-                    _controller.pop();
+                    _controller.pop(resetQuery: false);
                   } else {
                     // Close the whole thing?
                     Navigator.pop(context);
@@ -575,13 +493,24 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
             isHovering: true,
             decoration: widget.decoration,
             isFocused: _focusNode.hasFocus,
-            isEmpty: _query?.isNotEmpty != true && _chips.isEmpty,
+            isEmpty: _queryText.query.isNotNullOrBlank && _chips.isEmpty,
             textAlignVertical: TextAlignVertical.center,
             child: Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
 //              alignment: WrapAlignment.start,
 //              runAlignment: WrapAlignment.center,
-              children: chipsChildren,
+              children: [
+                ..._buildChips(),
+                ChipsInputText(
+                  key: Key("chips-input-text-${widget.id}-${_controller.enabled}"),
+                  isEnabled: _controller.enabled,
+                  baseStyle: baseStyle,
+                  placeholder: () => _controller.placeholder,
+                  queryText: queryText,
+                  onSuggestionTap: _onSuggestionTap,
+                  focusNode: _focusNode,
+                ),
+              ],
               spacing: 4.0,
               runSpacing: 4.0,
             ),
@@ -591,7 +520,35 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     );
   }
 
-  Iterable<ChipsInputItemWidget> _buildChips() {
+  void _postFrameMigration(Duration callback) {
+    // Trigger a migration for any in-transition widgets.  For sure a better way exists to do this;
+    if (this._adding.isNotEmpty) {
+      Future.delayed(30.ms, () {
+        /// On next frame
+        this._adding.forEach((idx, items) {
+          _chips.insertAll(idx, items);
+        });
+        this._adding.clear();
+
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+
+    if (this._deleting.isNotEmpty) {
+      Future.delayed(300.ms, () {
+        this._deleting.clear();
+
+        /// On next frame
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+  }
+
+  Iterable<Widget> _buildChips() {
     final maxIndex = max(_chips.length - 1, max(this._deleting.keys.max(0), this._adding.keys.max(0)));
 
     return rangeOf(0, maxIndex)
@@ -625,7 +582,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
           ];
         })
         .flatten()
-        .whereNotNull();
+        .whereNotNull()
+        .cast<Widget>()
+        .toList();
   }
 
   @override
@@ -633,62 +592,6 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
   @override
   TextEditingValue get currentTextEditingValue => _textValue;
-}
-
-class ChipsInputRow<T> extends StatelessWidget {
-  final FocusNode focusNode;
-  final TextStyle baseStyle;
-  final QueryText queryText;
-
-  final ChipsInputController<T> controller;
-  final GestureRecognizer onSuggestionTap;
-
-  const ChipsInputRow({
-    Key key,
-    @required this.queryText,
-    @required this.focusNode,
-    @required this.baseStyle,
-    @required this.onSuggestionTap,
-    @required this.controller,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 28.0,
-      child: Stack(
-        alignment: AlignmentDirectional.centerStart,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(queryText.query, style: baseStyle.copyWith(color: Colors.transparent)),
-              _TextCaret(resumed: focusNode.hasFocus),
-            ],
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Semantics(
-                label: "Action Suggestion",
-                child: Semantics(
-                  child: RichText(text: queryText.textSpan(baseStyle, onSuggestionTap)),
-                  label: "${queryText.suggestion}",
-                ),
-              ),
-            ],
-          ),
-          if (controller.enabled &&
-              queryText.query.trim().isEmpty &&
-              controller.suggestion.isEmpty &&
-              controller.placeholder.isNotNullOrBlank)
-            ChipsInputPlaceholder(baseStyle: baseStyle, placeholder: controller.placeholder),
-        ],
-      ),
-    );
-  }
 }
 
 class _TextCaret extends StatefulWidget {
@@ -741,22 +644,127 @@ class _TextCursorState extends State<_TextCaret> with SingleTickerProviderStateM
   }
 }
 
-class ChipsInputPlaceholder extends StatelessWidget {
-  final String placeholder;
+class ChipsInputText extends StatefulWidget {
+  final QueryText queryText;
+  final Getter<String> placeholder;
   final TextStyle baseStyle;
+  final GestureRecognizer onSuggestionTap;
+  final FocusNode focusNode;
+  final bool isEnabled;
 
-  const ChipsInputPlaceholder({Key key, @required this.placeholder, @required this.baseStyle}) : super(key: key);
+  const ChipsInputText({
+    Key key,
+    @required this.isEnabled,
+    @required this.baseStyle,
+    @required this.queryText,
+    @required this.onSuggestionTap,
+    @required this.focusNode,
+    @required this.placeholder,
+  }) : super(key: key);
+
+  @override
+  _ChipsInputTextState createState() => _ChipsInputTextState();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+
+    properties.add(DiagnosticsProperty.lazy("placeholder", () => placeholder()));
+    properties.add(DiagnosticsProperty.lazy("query", () => queryText.query));
+    properties.add(DiagnosticsProperty.lazy("suggestion", () => queryText.suggestion));
+  }
+}
+
+class _ChipsInputTextState extends State<ChipsInputText> {
+  @override
+  void initState() {
+    super.initState();
+    widget.queryText.addListener(_onChange);
+  }
+
+  @override
+  void dispose() {
+    widget.queryText.removeListener(_onChange);
+    super.dispose();
+  }
+
+  _onChange() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      height: 28.0,
+      child: Stack(
+        alignment: AlignmentDirectional.centerStart,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(query ?? "", style: widget.baseStyle.copyWith(color: Colors.transparent)),
+              _TextCaret(resumed: widget.focusNode.hasFocus),
+            ],
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Semantics(
+                label: "Action Suggestion",
+                child: Semantics(
+                  child: RichText(text: textSpan(widget.baseStyle, widget.onSuggestionTap)),
+                  label: "${widget.queryText.suggestion}",
+                ),
+              ),
+            ],
+          ),
+          if (widget.isEnabled && (query.isNullOrBlank && suggestion.isNullOrBlank && placeholder.isNotNullOrBlank))
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  placeholder,
+                  style: widget.baseStyle.copyWith(color: widget.baseStyle.color.withOpacity(0.4)),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  String get placeholder => widget.placeholder();
+
+  String get query => widget.queryText.query;
+
+  String get suggestion => widget.queryText.suggestion;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty.lazy("query", () => query));
+    properties.add(DiagnosticsProperty.lazy("suggestion", () => suggestion));
+  }
+
+  TextSpan textSpan(TextStyle baseStyle, GestureRecognizer recognizer) {
+    final q = query;
+    if (suggestion.isNotNullOrBlank) recognizer = null;
+
+    if (suggestion?.isNotEmpty != true) recognizer = null;
+    return TextSpan(
       children: [
-        Text(
-          placeholder,
-          style: baseStyle.copyWith(color: baseStyle.color.withOpacity(0.4)),
-        ),
+        if (query.isNotNullOrBlank) TextSpan(style: baseStyle, text: q, recognizer: recognizer),
+        if (suggestion.isNotNullOrBlank)
+          TextSpan(
+            recognizer: recognizer,
+            text: suggestion.substring(q.length),
+            style: baseStyle.copyWith(
+              color: baseStyle.color.withOpacity(0.4),
+            ),
+          ),
       ],
     );
   }
@@ -775,34 +783,46 @@ TextStyle _defaultTextStyle(ChipsInput widget, ThemeData theme) {
 }
 
 /// Holds query text and suggestions
-class QueryText {
-  final String query;
-  final String suggestion;
+class QueryText extends ChangeNotifier {
+  String _query;
+  String _suggestion;
 
-  QueryText(this.query, [this.suggestion]);
+  /// Used for debugging only
+  String placeholder;
 
-  bool get hasSuggestion => suggestion?.isNotEmpty == true;
+  QueryText({
+    String query,
+    String suggestion,
+    this.placeholder,
+  })  : _query = query,
+        _suggestion = suggestion;
 
-  bool get hasQuery => query?.isNotEmpty == true;
+  String get suggestion => _suggestion;
 
-  TextSpan textSpan(TextStyle baseStyle, GestureRecognizer recognizer) {
-    final q = query;
-    if (!hasSuggestion) recognizer = null;
+  String get query => _query;
 
-    if (suggestion?.isNotEmpty != true) recognizer = null;
-    return TextSpan(
-      children: [
-        if (hasQuery) TextSpan(style: baseStyle, text: q, recognizer: recognizer),
-        if (hasSuggestion)
-          TextSpan(
-            recognizer: recognizer,
-            text: suggestion.substring(q.length),
-            style: baseStyle.copyWith(
-              color: baseStyle.color.withOpacity(0.4),
-            ),
-          ),
-      ],
-    );
+  update({String query, String suggestion, String placeholder}) {
+    this._suggestion = suggestion;
+    this._query = query;
+    notifyListeners();
+  }
+
+  set suggestion(String value) {
+    _suggestion = value;
+    _checkSuggestion();
+    notifyListeners();
+  }
+
+  _checkSuggestion() {
+    if (_suggestion?.toLowerCase()?.startsWith(this._query?.toLowerCase()) != true) {
+      _suggestion = null;
+    }
+  }
+
+  set query(String value) {
+    _query = value;
+    _checkSuggestion();
+    notifyListeners();
   }
 }
 
