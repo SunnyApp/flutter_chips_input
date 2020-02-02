@@ -34,7 +34,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    controller = ChipsInputController<AppProfile>(findSuggestions: _findSuggestions);
+    controller =
+        ChipsInputController<AppProfile>(findSuggestions: _findSuggestions);
     controller2 = ChipsInputController<AppProfile>(
       findSuggestions: _findSuggestions,
       hideSuggestionOverlay: true,
@@ -63,8 +64,8 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             ChipsInput<AppProfile>(
               initialValue: [
-                AppProfile(
-                    'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
+                AppProfile('John Doe', 'jdoe@flutter.io',
+                    'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
               id: "app-profile",
               controller: controller,
@@ -72,13 +73,15 @@ class _MyHomePageState extends State<MyHomePage> {
               autofocus: true,
               enabled: true,
               maxChips: 5,
-              chipTokenizer: (profile) => [profile.name, profile.email].where((token) => token != null),
+              chipTokenizer: (profile) =>
+                  [profile.name, profile.email].where((token) => token != null),
               onSuggestionTap: (chip) {
                 controller.addChip(chip, resetQuery: true);
               },
               onInputAction: (_) {
                 if (controller.suggestion != null) {
-                  controller.addChip(controller.suggestion.item, resetQuery: true);
+                  controller.addChip(controller.suggestion.item,
+                      resetQuery: true);
                 }
               },
               inputConfiguration: TextInputConfiguration(
@@ -98,7 +101,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   avatar: CircleAvatar(
                     backgroundImage: NetworkImage(profile.imageUrl),
                   ),
-                  onDeleted: () => controller.deleteChip(profile, resetQuery: true),
+                  onDeleted: () =>
+                      controller.deleteChip(profile, resetQuery: true),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
               },
@@ -116,8 +120,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             ChipsInput<AppProfile>(
               initialValue: [
-                AppProfile(
-                    'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
+                AppProfile('John Doe', 'jdoe@flutter.io',
+                    'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
               ],
               id: "app-profile-2",
               controller: controller2,
@@ -125,13 +129,15 @@ class _MyHomePageState extends State<MyHomePage> {
               autofocus: true,
               enabled: true,
               maxChips: 5,
-              chipTokenizer: (profile) => [profile.name, profile.email].where((token) => token != null),
+              chipTokenizer: (profile) =>
+                  [profile.name, profile.email].where((token) => token != null),
               onSuggestionTap: (chip) {
                 controller.addChip(chip, resetQuery: true);
               },
               onInputAction: (_) {
                 if (controller.suggestion != null) {
-                  controller.addChip(controller.suggestion.item, resetQuery: true);
+                  controller.addChip(controller.suggestion.item,
+                      resetQuery: true);
                 }
               },
               inputConfiguration: TextInputConfiguration(
@@ -151,7 +157,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   avatar: CircleAvatar(
                     backgroundImage: NetworkImage(profile.imageUrl),
                   ),
-                  onDeleted: () => controller.deleteChip(profile, resetQuery: true),
+                  onDeleted: () =>
+                      controller.deleteChip(profile, resetQuery: true),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
               },
@@ -194,7 +201,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   elevation: 1,
                   color: Colors.orange,
                   onPressed: () {
-                    controller2.setInlineSuggestion(mockResults[4], notify: true);
+                    controller2.setInlineSuggestion(mockResults[4],
+                        notify: true);
                   },
                   child: Text("Set Suggestion"),
                 ),
@@ -240,15 +248,21 @@ class _MyHomePageState extends State<MyHomePage> {
               profile.email.toLowerCase().contains(lowercaseQuery);
         },
       ).toList(growable: false)
-        ..sort((a, b) =>
-            a.name.toLowerCase().indexOf(lowercaseQuery).compareTo(b.name.toLowerCase().indexOf(lowercaseQuery)));
+        ..sort((a, b) => a.name
+            .toLowerCase()
+            .indexOf(lowercaseQuery)
+            .compareTo(b.name.toLowerCase().indexOf(lowercaseQuery)));
       var exactMatch = mockResults.firstWhere(
-        (profile) => profile.name.toLowerCase() == lowercaseQuery || profile.email.toLowerCase() == lowercaseQuery,
+        (profile) =>
+            profile.name.toLowerCase() == lowercaseQuery ||
+            profile.email.toLowerCase() == lowercaseQuery,
         orElse: () => null,
       );
       return ChipSuggestions<AppProfile>(
           suggestions: foundResults,
-          match: foundResults.length == 1 && exactMatch != null ? Suggestion(item: exactMatch) : Suggestion.empty());
+          match: foundResults.length == 1 && exactMatch != null
+              ? Suggestion(item: exactMatch)
+              : Suggestion.empty());
     } else {
       return const ChipSuggestions.empty();
     }
@@ -264,7 +278,10 @@ class AppProfile {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is AppProfile && runtimeType == other.runtimeType && name == other.name;
+      identical(this, other) ||
+      other is AppProfile &&
+          runtimeType == other.runtimeType &&
+          name == other.name;
 
   @override
   int get hashCode => name.hashCode;
@@ -276,8 +293,10 @@ class AppProfile {
 }
 
 const mockResults = <AppProfile>[
-  AppProfile('John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
-  AppProfile('Paul', 'paul@google.com', 'https://mbtskoudsalg.com/images/person-stock-image-png.png'),
+  AppProfile('John Doe', 'jdoe@flutter.io',
+      'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
+  AppProfile('Paul', 'paul@google.com',
+      'https://mbtskoudsalg.com/images/person-stock-image-png.png'),
   AppProfile('Fred', 'fred@google.com',
       'https://media.istockphoto.com/photos/feeling-great-about-my-corporate-choices-picture-id507296326'),
   AppProfile('Brian', 'brian@flutter.io',

@@ -14,7 +14,9 @@ class ChipSuggestions<T> {
 
   ChipSuggestions<T> removeAll(Iterable<T> chips) {
     final set = {...?chips};
-    return ChipSuggestions(match: match, suggestions: [...suggestions.where((s) => !set.contains(s))]);
+    return ChipSuggestions(
+        match: match,
+        suggestions: [...suggestions.where((s) => !set.contains(s))]);
   }
 }
 
@@ -61,7 +63,8 @@ class Suggestion<T> {
     } else {
       return buildString((str) {
         str += "Suggestion{ item: $item";
-        if (highlightText.isNotNullOrBlank) str += ", highlight: $highlightText";
+        if (highlightText.isNotNullOrBlank)
+          str += ", highlight: $highlightText";
         str += " }";
       });
     }
