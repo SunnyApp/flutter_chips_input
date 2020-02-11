@@ -5,6 +5,7 @@ import 'package:collection_diff/list_diff_model.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
+import 'package:flutter_chips_input_sunny/src/chip_diff.dart';
 import 'package:flutter_chips_input_sunny/src/chips_input.dart';
 import 'package:logging/logging.dart';
 import 'package:observable_collections/observable_collections.dart';
@@ -24,8 +25,10 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
 
   /// The current list of chips to display
   final SunnyObservableList<T> chips;
+
   final SyncStream<ChipSuggestions<T>> _suggestions;
   final SyncStream<Suggestion<T>> _suggestion;
+  final StreamController<ChipsDiff<T>> _diffs;
 
   /// Current status of the whole control
   ControllerStatus _status = ControllerStatus.closed;
@@ -101,8 +104,8 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
           debugName: "$debugLabel => suggestions",
           initialValue: const ChipSuggestions.empty(),
         ),
-        _suggestion =
-            SyncStream.controller(debugName: "$debugLabel => suggestions"),
+        _diffs = StreamController.broadcast(),
+        _suggestion = SyncStream.controller(debugName: "$debugLabel => suggestions"),
         tokenizer = tokenizer ?? ((t) => ["$t"]),
         _query = AsyncValueStream(
           debugName: "$debugLabel => query",
@@ -115,6 +118,8 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
       }));
     }
   }
+
+  Stream<ChipsDiff<T>> get diffStream => _diffs.stream;
 
   ControllerStatus get status => _status;
 
@@ -129,13 +134,14 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     notifyListeners();
   }
 
-  Future updateChips(Iterable<T> chips, {@required bool resetQuery}) async {
+  Future updateChips(Iterable<T> chips, {@required bool resetQuery, @required ChipChangeOperation source}) async {
     /// Notify:false ?  Dunny
-    await this.syncChips(chips, notify: true, resetQuery: resetQuery);
+    await this.syncChips(chips, notify: true, resetQuery: resetQuery, source: source);
   }
 
   Future dispose() async {
     _status = ControllerStatus.closed;
+    await _diffs.close();
     super.dispose();
     chips.dispose();
     _placeholder.disposeAll();
@@ -148,13 +154,11 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
 
   ValueStream<String> get queryStream => _query;
 
-  List<T> get suggestions =>
-      List.from(_suggestions.current?.suggestions ?? [], growable: false);
+  List<T> get suggestions => List.from(_suggestions.current?.suggestions ?? [], growable: false);
 
   String get query => _query.current ?? "";
 
-  Suggestion<T> get suggestion =>
-      _suggestion.current ?? const Suggestion.empty();
+  Suggestion<T> get suggestion => _suggestion.current ?? const Suggestion.empty();
 
   set suggestion(Suggestion<T> suggestion) {
     suggestion ??= Suggestion<T>.empty();
@@ -186,8 +190,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
   }
 
   loadSuggestions(String query) async {
-    final ChipSuggestions<T> results =
-        (await findSuggestions(query)).removeAll(chips);
+    final ChipSuggestions<T> results = (await findSuggestions(query)).removeAll(chips);
     if (results.match != null) {
       suggestion = results.match;
     } else {
@@ -197,8 +200,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     notifyListeners();
   }
 
-  calculateInlineSuggestion(ChipSuggestions<T> _chipSuggest,
-      {bool notify = false}) {
+  calculateInlineSuggestion(ChipSuggestions<T> _chipSuggest, {bool notify = false}) {
     // Looks for the first suggestion that actually matches what the user is typing so we
     // can add an inline suggestion
     if (query.isEmpty) {
@@ -243,12 +245,9 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     }
   }
 
-  setInlineSuggestion(T suggestion,
-      {String suggestionToken, bool notify = false}) {
+  setInlineSuggestion(T suggestion, {String suggestionToken, bool notify = false}) {
     this.suggestion = Suggestion.highlighted(
-        item: suggestion,
-        highlightText:
-            suggestionToken ?? suggestionToken ?? tokenizer(suggestion).first);
+        item: suggestion, highlightText: suggestionToken ?? suggestionToken ?? tokenizer(suggestion).first);
     if (notify) {
       notifyListeners();
     }
@@ -257,13 +256,13 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
   Future<ListDiffs<T>> removeAt(int index, {@required bool resetQuery}) async {
     return await _applyDiff((_chips) {
       _chips.removeAt(index);
-    }, resetQuery: resetQuery);
+    }, source: ChipChangeOperation.deleteChip, resetQuery: resetQuery);
   }
 
   Future<ListDiffs<T>> deleteChip(T data, {@required bool resetQuery}) async {
     return await _applyDiff((_chips) {
       _chips.remove(data);
-    }, resetQuery: resetQuery);
+    }, resetQuery: resetQuery, source: ChipChangeOperation.deleteChip);
   }
 
   Future acceptSuggestion({T suggestion}) async {
@@ -277,7 +276,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
   }
 
   Future<ListDiffs<T>> _applyDiff(void mutation(List<T> copy),
-      {bool notify = true, @required bool resetQuery}) async {
+      {@required ChipChangeOperation source, bool notify = true, @required bool resetQuery}) async {
     resetQuery ??= false;
     if (!enabled) return ListDiffs.empty();
 
@@ -290,6 +289,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
       await resetSuggestions();
       if (notify) notifyListeners();
     }
+    _diffs.add(ChipsDiff(diffs, source));
     return diffs;
   }
 
@@ -297,25 +297,25 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     resetQuery ??= false;
     final result = await _applyDiff((_chips) {
       _chips.add(data);
-    }, resetQuery: resetQuery);
+    }, source: ChipChangeOperation.addChip, resetQuery: resetQuery);
 
     return result;
   }
 
   Future<ListDiffs<T>> syncChips(Iterable<T> newChips,
-      {bool notify = true, bool resetQuery}) async {
+      {bool notify = true, bool resetQuery, @required ChipChangeOperation source}) async {
     final changed = await _applyDiff((_chips) {
       _chips.clear();
       _chips.addAll(newChips);
-    }, resetQuery: resetQuery, notify: notify);
+    }, resetQuery: resetQuery, source: source, notify: notify);
 
     return changed;
   }
 
-  Future<ListDiffs<T>> addAll(Iterable<T> values, bool resetQuery) async {
+  Future<ListDiffs<T>> addAll(Iterable<T> values, bool resetQuery, {@required ChipChangeOperation source}) async {
     return await _applyDiff((_chips) {
       values?.forEach((v) => _chips.add(v));
-    }, resetQuery: resetQuery);
+    }, source: source, resetQuery: resetQuery);
   }
 
   resetSuggestions() async {
@@ -325,10 +325,10 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     notifyListeners();
   }
 
-  Future<ListDiffs<T>> pop({@required bool resetQuery}) {
+  Future<ListDiffs<T>> pop({@required ChipChangeOperation source, @required bool resetQuery}) {
     return _applyDiff((_chips) {
       _chips.removeLast();
-    }, resetQuery: resetQuery);
+    }, resetQuery: resetQuery, source: source);
   }
 
   initialize(BuildContext context, OverlayEntry entry) {
@@ -390,11 +390,9 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
 
   hideKeyboard() => _hideKeyboard?.call();
 
-  set requestKeyboardCallback(VoidCallback callback) =>
-      this._requestKeyboard = callback;
+  set requestKeyboardCallback(VoidCallback callback) => this._requestKeyboard = callback;
 
-  set hideKeyboardCallback(VoidCallback callback) =>
-      this._hideKeyboard = callback;
+  set hideKeyboardCallback(VoidCallback callback) => this._hideKeyboard = callback;
 }
 
 enum ControllerStatus { open, closed, opening }
