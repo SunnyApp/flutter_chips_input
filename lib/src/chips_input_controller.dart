@@ -129,6 +129,9 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
 
   int get size => chips.length;
 
+  bool _isDisposed = false;
+  bool get isDisposed => _isDisposed;
+
   set placeholder(String placeholder) {
     this._placeholder.update(placeholder);
     notifyListeners();
@@ -140,6 +143,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
   }
 
   Future dispose() async {
+    _isDisposed = true;
     _status = ControllerStatus.closed;
     await _diffs.close();
     super.dispose();
@@ -160,36 +164,53 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
 
   Suggestion<T> get suggestion => _suggestion.current ?? const Suggestion.empty();
 
-  set suggestion(Suggestion<T> suggestion) {
-    suggestion ??= Suggestion<T>.empty();
-    if (suggestion.isNotEmpty && suggestion.highlightText == null) {
-      /// Should we do this here??
-      suggestion = suggestion.copy(
-          highlightText: tokenizer(suggestion.item).orEmpty().where((s) {
-        return s.toLowerCase().startsWith(query.toLowerCase());
-      }).firstOrNull);
+  X checkStatus<X>(X operation()) {
+    if (_isDisposed) {
+      return null;
+    } else {
+      return operation();
     }
-    _suggestion.current = suggestion;
-    notifyListeners();
   }
 
-  set suggestions(Iterable<T> suggestions) {
-    final suggest = ChipSuggestions<T>(suggestions: [...?suggestions]);
-    calculateInlineSuggestion(suggest);
-    _suggestions.current = suggest;
-    notifyListeners();
+  void checkStatusVoid(void operation()) {
+    if (!_isDisposed) {
+      operation();
+    }
   }
+
+  set suggestion(Suggestion<T> suggestion) => checkStatusVoid(() {
+        suggestion ??= Suggestion<T>.empty();
+        if (suggestion.isNotEmpty && suggestion.highlightText == null) {
+          /// Should we do this here??
+          suggestion = suggestion.copy(
+              highlightText: tokenizer(suggestion.item).orEmpty().where((s) {
+            return s.toLowerCase().startsWith(query.toLowerCase());
+          }).firstOrNull);
+        }
+        _suggestion.current = suggestion;
+        notifyListeners();
+      });
+
+  set suggestions(Iterable<T> suggestions) => checkStatusVoid(() {
+        final suggest = ChipSuggestions<T>(suggestions: [...?suggestions]);
+        calculateInlineSuggestion(suggest);
+        _suggestions.current = suggest;
+        notifyListeners();
+      });
 
   setQuery(String query, {bool isInput}) async {
+    if (_isDisposed) return;
     await _query.syncUpdate(query);
   }
 
   notifyListeners() {
+    if (_isDisposed) return;
     if (_status != ControllerStatus.open) return;
     super.notifyListeners();
   }
 
   loadSuggestions(String query) async {
+    if (_isDisposed) return;
     final ChipSuggestions<T> results = (await findSuggestions(query)).removeAll(chips);
     if (results.match != null) {
       suggestion = results.match;
@@ -201,6 +222,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
   }
 
   calculateInlineSuggestion(ChipSuggestions<T> _chipSuggest, {bool notify = false}) {
+    if (_isDisposed) return;
     // Looks for the first suggestion that actually matches what the user is typing so we
     // can add an inline suggestion
     if (query.isEmpty) {
@@ -246,6 +268,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
   }
 
   setInlineSuggestion(T suggestion, {String suggestionToken, bool notify = false}) {
+    if (_isDisposed) return;
     this.suggestion = Suggestion.highlighted(
         item: suggestion, highlightText: suggestionToken ?? suggestionToken ?? tokenizer(suggestion).first);
     if (notify) {
