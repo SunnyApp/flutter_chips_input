@@ -150,7 +150,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     chips.dispose();
     _placeholder.disposeAll();
     await _query.dispose();
-    _suggestions.dispose();
+    await _suggestions.dispose();
   }
 
   ValueStream<ChipSuggestions<T>> get suggestionsStream => _suggestions;
