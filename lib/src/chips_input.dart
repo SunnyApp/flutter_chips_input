@@ -88,6 +88,9 @@ class ChipsInput<T> extends StatefulWidget {
     /// The max number of chips to allow
     this.maxChips,
 
+    /// When the user swipes and the input is empty
+    this.onSwipeClosed,
+
     /// Configuration for the text input itself.
     this.inputConfiguration,
 
@@ -133,6 +136,9 @@ class ChipsInput<T> extends StatefulWidget {
   final QueryChanged<T> onQueryChanged;
   final OnLostFocus<T> onLostFocus;
   final ChipsChanged<T> onChipsChanged;
+
+  /// When the user swipes when the chips input is empty
+  final VoidCallback onSwipeClosed;
 
   final String query;
 
@@ -469,7 +475,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
                     _controller.pop(resetQuery: false, source: ChipChangeOperation.deleteChip);
                   } else {
                     // Close the whole thing?
-                    Navigator.pop(context);
+                    widget.onSwipeClosed?.call();
                   }
                 } else if (_accepting) {
                   // We are trying to select something
