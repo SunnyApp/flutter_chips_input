@@ -154,9 +154,9 @@ packages:
   isolate_service:
     dependency: transitive
     description:
-      name: isolate_service
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "../isolate_service"
+      relative: true
+    source: path
     version: "0.4.7"
   libphonenumber:
     dependency: transitive
@@ -175,9 +175,9 @@ packages:
   logging_config:
     dependency: transitive
     description:
-      name: logging_config
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "../logging_config"
+      relative: true
+    source: path
     version: "0.4.5"
   matcher:
     dependency: transitive
@@ -214,6 +214,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.6.4"
+  pedantic:
+    dependency: transitive
+    description:
+      name: pedantic
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.8.0+1"
   petitparser:
     dependency: transitive
     description:
@@ -295,7 +302,7 @@ packages:
       name: test_api
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.15"
+    version: "0.2.11"
   timezone:
     dependency: transitive
     description:

@@ -65,7 +65,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     String placeholder,
     String query,
     Iterable<T> chips,
-    DiffEquality<T> equality,
+    DiffEquality equality,
     ChipTokenizer<T> tokenizer,
     bool hideSuggestionOverlay,
   }) : this._(
@@ -86,7 +86,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
     String placeholder,
     String query,
     this.findSuggestions,
-    DiffEquality<T> equality,
+    DiffEquality equality,
     bool suggestOnType,
     this.hideSuggestionOverlay,
     ChipTokenizer<T> tokenizer,
