@@ -12,17 +12,20 @@ dependencies:
     sdk: flutter
   logging: ^0.11.4
   after_layout: ^1.0.7+2
-  sunny_dart:
-    path: ../sunny_dart
-  collection_diff:
-    path: ../collection_diff
+  sunny_dart: ^0.5.6
+  collection_diff: ^1.0.3
   stream_transform: ^1.1.0
-  observable_collections:
-    path: ../observable_collections
+  observable_collections: ^0.4.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+dependency_overrides:
+  sunny_dart:
+    path: ../sunny_dart
+  collection_diff:
+    path: ../collection_diff
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec

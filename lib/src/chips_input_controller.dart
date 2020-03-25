@@ -109,7 +109,6 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
         tokenizer = tokenizer ?? ((t) => ["$t"]),
         _query = AsyncValueStream(
           debugName: "$debugLabel => query",
-          transform: (input) => input.debounce(300.ms),
           initialValue: query,
         ) {
     if (suggestOnType == true) {
