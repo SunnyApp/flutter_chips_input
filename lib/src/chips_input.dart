@@ -168,6 +168,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   final Logger log = Logger("chipsInputState");
   ChipsInputController<T> _controller;
   FocusNode _focusNode;
+
   TextInputConnection _connection;
   LayerLink _layerLink = LayerLink();
 
@@ -280,7 +281,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
       }
     }, cancelOnError: false).cancel);
 
-    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode = widget.focusNode ?? FocusNode(debugLabel: 'chips-input-${widget.id}');
     _focusNode.addListener(_onFocusChanged);
 
     if (widget.onSuggestionTap != null) {
@@ -293,13 +294,11 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
   @override
   void dispose() {
-    if (widget.focusNode == null) {
-      _focusNode.dispose();
-    }
+    _focusNode.removeListener(_onFocusChanged);
     _disposers.forEach((disp) => disp());
     _closeInputConnectionIfNeeded();
     if (widget.controller == null) {
-      _controller.dispose().then((_) {});
+      _controller.dispose();
     }
     super.dispose();
   }
@@ -340,7 +339,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     final oldCount = _chips.length;
     final newCount = _countReplacements(newText);
     if (isUserInput && newCount < oldCount && inputValue.isNotNullOrBlank) {
-      // If resetQuery = true here, then it ends up removing some chip udpates
+      // If resetQuery = true here, then it ends up removing some chip updates
       // as soon as they happen
       _controller.updateChips(_chips.take(newCount), source: ChipChangeOperation.deleteChip, resetQuery: false);
     }
@@ -360,8 +359,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
         _connection.setEditingState(_textValue);
       }
       _connection.show();
-    } catch (e) {
-      print(e);
+    } catch (e, stack) {
+      log.severe("problem opening input connection: $e", e, stack);
     }
   }
 
@@ -372,12 +371,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
         _connection = null;
         _controller.connection = null;
       }
-    } catch (e) {
-      print(e);
+    } catch (e, stack) {
+      log.severe("problem closing input connection: $e", e, stack);
     }
   }
 
-  requestKeyboard(BuildContext context) {
+  void requestKeyboard(BuildContext context) {
     FocusScope.of(context).requestFocus(_focusNode);
   }
 
@@ -442,7 +441,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     ));
 
     if (_controller.enabled && widget.autofocus == true) {
-      FocusScope.of(context).requestFocus(_focusNode);
+      requestKeyboard(context);
     }
   }
 
@@ -696,7 +695,7 @@ class _ChipsInputTextState extends State<ChipsInputText> {
     super.dispose();
   }
 
-  _onChange() {
+  void _onChange() {
     setState(() {});
   }
 
@@ -786,7 +785,7 @@ TextEditingValue textEditingValue(String text) => TextEditingValue(
 const kObjectReplacementChar = 0xFFFC;
 
 TextStyle _defaultTextStyle(ChipsInput widget, ThemeData theme) {
-  final defaultStyle = widget.decoration?.labelStyle ?? theme.textTheme.subhead;
+  final defaultStyle = widget.decoration?.labelStyle ?? theme.textTheme.subtitle1;
   return defaultStyle.copyWith(fontSize: 15);
 }
 
@@ -809,7 +808,7 @@ class QueryText extends ChangeNotifier {
 
   String get query => _query;
 
-  update({String query, String suggestion, String placeholder}) {
+  void update({String query, String suggestion, String placeholder}) {
     this._suggestion = suggestion;
     this._query = query;
     notifyListeners();
@@ -821,7 +820,7 @@ class QueryText extends ChangeNotifier {
     notifyListeners();
   }
 
-  _checkSuggestion() {
+  void _checkSuggestion() {
     if (_suggestion?.toLowerCase()?.startsWith(this._query?.toLowerCase()) != true) {
       _suggestion = null;
     }
@@ -842,7 +841,7 @@ class ChipsInputItemWidget<T> extends StatelessWidget {
   final ChipsInputItemStatus status;
   final TickerProvider vsync;
 
-  ChipsInputItemWidget({
+  const ChipsInputItemWidget({
     @required Key key,
     @required this.item,
     @required this.child,

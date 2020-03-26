@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chips_input_sunny/flutter_chips_input.dart';
+import 'package:logging/logging.dart';
+import 'package:logging_config/logging_config.dart';
 
 void main() => runApp(MyApp());
 
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key}) : super(key: key);
+  const MyHomePage({Key key}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -30,10 +32,12 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<ChipsInputState<AppProfile>> key = GlobalKey();
   ChipsInputController<AppProfile> controller;
   ChipsInputController<AppProfile> controller2;
+  FocusNode focusFirst;
 
   @override
   void initState() {
     super.initState();
+    configureLogging(LogConfig.root(Level.FINE, handler: LoggingHandler.dev()));
     controller = ChipsInputController<AppProfile>(findSuggestions: _findSuggestions);
     controller2 = ChipsInputController<AppProfile>(
       findSuggestions: _findSuggestions,
@@ -42,11 +46,13 @@ class _MyHomePageState extends State<MyHomePage> {
     controller.queryStream.after.listen((query) {
       _textController.text = query;
     });
+    focusFirst = FocusNode(debugLabel: "first chip focus");
   }
 
   @override
   void dispose() {
     controller.dispose();
+    focusFirst.dispose();
     super.dispose();
   }
 
@@ -77,7 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 controller.addChip(chip, resetQuery: true);
               },
               onInputAction: (_) {
-                if (controller.suggestion != null) {
+                if (controller.suggestion.isNotEmpty) {
                   controller.addChip(controller.suggestion.item, resetQuery: true);
                 }
               },
@@ -116,22 +122,22 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             ChipsInput<AppProfile>(
               initialValue: [
-                AppProfile(
-                    'John Doe', 'jdoe@flutter.io', 'https://d2gg9evh47fn9z.cloudfront.net/800px_COLOURBOX4057996.jpg'),
+                mockResults[3],
               ],
               id: "app-profile-2",
               controller: controller2,
               placeholder: "Search contacts",
               autofocus: true,
+              focusNode: focusFirst,
               enabled: true,
               maxChips: 5,
               chipTokenizer: (profile) => [profile.name, profile.email].where((token) => token != null),
               onSuggestionTap: (chip) {
-                controller.addChip(chip, resetQuery: true);
+                controller2.addChip(chip, resetQuery: true);
               },
               onInputAction: (_) {
-                if (controller.suggestion != null) {
-                  controller.addChip(controller.suggestion.item, resetQuery: true);
+                if (controller2.suggestion.isNotEmpty) {
+                  controller2.addChip(controller2.suggestion.item, resetQuery: true);
                 }
               },
               inputConfiguration: TextInputConfiguration(
@@ -140,11 +146,11 @@ class _MyHomePageState extends State<MyHomePage> {
               decoration: InputDecoration(
                 // prefixIcon: Icon(Icons.search),
                 // hintText: formControl.hint,
-                labelText: "Select People",
+                labelText: "No Drop-Down Selector",
                 // enabled: false,
                 // errorText: field.errorText,
               ),
-              chipBuilder: (context, _, index, profile) {
+              chipBuilder: (context, controller, index, profile) {
                 return InputChip(
                   key: ObjectKey(profile),
                   label: Text(profile.name),
@@ -163,13 +169,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   title: Text(profile.name),
                   subtitle: Text(profile.email),
-                  onTap: () => controller.addChip(profile, resetQuery: true),
+                  onTap: () => controller2.addChip(profile, resetQuery: true),
                 );
               },
-            ),
-            TextField(
-              enabled: false,
-              controller: _textController,
             ),
             Wrap(
               spacing: 5,
@@ -178,17 +180,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   elevation: 1,
                   color: Colors.orange,
                   onPressed: () {
-                    controller.setQuery("");
+                    controller.setQuery("", isInput: false);
                   },
                   child: Text("Reset Search"),
-                ),
-                MaterialButton(
-                  elevation: 1,
-                  color: Colors.blue,
-                  onPressed: () {
-                    controller.setQuery("Bill");
-                  },
-                  child: Text("Set Query"),
                 ),
                 MaterialButton(
                   elevation: 1,
@@ -232,7 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   ChipSuggestions<AppProfile> _findSuggestions(String query) {
-    if (query.length != 0) {
+    if (query.isNotEmpty) {
       var lowercaseQuery = query.toLowerCase();
       var foundResults = mockResults.where(
         (profile) {
@@ -248,7 +242,9 @@ class _MyHomePageState extends State<MyHomePage> {
       );
       return ChipSuggestions<AppProfile>(
           suggestions: foundResults,
-          match: foundResults.length == 1 && exactMatch != null ? Suggestion(item: exactMatch) : Suggestion.empty());
+          match: foundResults.length == 1 && exactMatch != null
+              ? Suggestion.highlighted(item: exactMatch, highlightText: exactMatch.name)
+              : Suggestion.empty());
     } else {
       return const ChipSuggestions.empty();
     }

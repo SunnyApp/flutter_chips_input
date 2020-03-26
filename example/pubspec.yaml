@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  logging_config:
+  logging:
 
   flutter_chips_input_sunny:
       path: ../

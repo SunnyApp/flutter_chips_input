@@ -9,6 +9,11 @@
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
+    <content url="file://$MODULE_DIR$/../collection_diff">
+      <excludeFolder url="file://$MODULE_DIR$/../collection_diff/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/../collection_diff/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/../collection_diff/build" />
+    </content>
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/lib" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
@@ -20,6 +25,16 @@
       <excludeFolder url="file://$MODULE_DIR$/example/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/example/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/example/build" />
+    </content>
+    <content url="file://$MODULE_DIR$/../observable_collections">
+      <excludeFolder url="file://$MODULE_DIR$/../observable_collections/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/../observable_collections/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/../observable_collections/build" />
+    </content>
+    <content url="file://$MODULE_DIR$/../sunny_dart">
+      <excludeFolder url="file://$MODULE_DIR$/../sunny_dart/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/../sunny_dart/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/../sunny_dart/build" />
     </content>
     <orderEntry type="jdk" jdkName="Android API 25 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

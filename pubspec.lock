@@ -187,7 +187,7 @@ packages:
     source: hosted
     version: "0.11.4"
   logging_config:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: logging_config
       url: "https://pub.dartlang.org"
@@ -217,10 +217,10 @@ packages:
   observable_collections:
     dependency: "direct main"
     description:
-      name: observable_collections
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.4.4"
+      path: "../observable_collections"
+      relative: true
+    source: path
+    version: "0.5.1"
   path:
     dependency: transitive
     description:
@@ -316,7 +316,7 @@ packages:
       path: "../sunny_dart"
       relative: true
     source: path
-    version: "0.5.5"
+    version: "0.5.6"
   term_glyph:
     dependency: transitive
     description:
