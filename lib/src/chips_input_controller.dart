@@ -221,7 +221,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
   Future loadSuggestions(String query) async {
     if (_isDisposed) return;
     final ChipSuggestions<T> results = (await findSuggestions(query)).removeAll(chips);
-    if (results.match.isNotEmpty) {
+    if (results.match?.isNotEmpty == true) {
       suggestion = results.match;
     } else {
       calculateInlineSuggestion(_suggestions.current);
