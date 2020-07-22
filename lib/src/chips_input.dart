@@ -621,8 +621,8 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   @override
   TextEditingValue get currentTextEditingValue => _textValue;
 
-//  @override
-//  AutofillScope currentAutofillScope = ChipAutofillScope();
+  @override
+  AutofillScope currentAutofillScope = ChipAutofillScope();
 
   @override
   void showAutocorrectionPromptRect(int start, int end) {
@@ -907,14 +907,14 @@ class ChipsInputItemWidget<T> extends StatelessWidget {
   }
 }
 
-//class ChipAutofillScope with AutofillScopeMixin {
-//  final _autofillClients = <String, AutofillClient>{};
-//
-//  @override
-//  AutofillClient getAutofillClient(String autofillId) {
-//    return _autofillClients[autofillId];
-//  }
-//
-//  @override
-//  Iterable<AutofillClient> get autofillClients => _autofillClients.values;
-//}
+class ChipAutofillScope with AutofillScopeMixin {
+  final _autofillClients = <String, AutofillClient>{};
+
+  @override
+  AutofillClient getAutofillClient(String autofillId) {
+    return _autofillClients[autofillId];
+  }
+
+  @override
+  Iterable<AutofillClient> get autofillClients => _autofillClients.values;
+}
