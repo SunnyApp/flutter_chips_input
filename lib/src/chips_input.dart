@@ -333,6 +333,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
     }
   }
 
+  /// Requests that this client perform the private command.
+  @override
+  void performPrivateCommand(String action, Map<String, dynamic> data) {
+    // Do nothing for now...
+  }
+
   /// Implemented from [TextInputClient]
   @override
   void updateFloatingCursor(RawFloatingCursorPoint point) {}

@@ -6,15 +6,16 @@ homepage: https://github.com/danvick/flutter_chips_input
 
 environment:
   sdk: ">=2.6.0 <3.0.0"
+  flutter: <3.0.0
 
 dependencies:
   flutter:
     sdk: flutter
   logging: ^0.11.4
   after_layout: ^1.0.7+2
-  sunny_dart: ^0.5.6
+  sunny_dart: ^0.5.8+2
   collection_diff: ^1.0.3
-  stream_transform: ^1.1.0
+  stream_transform: ^1.2.0
   observable_collections: ^0.5.1
 
 dev_dependencies:
