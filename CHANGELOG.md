@@ -1,3 +1,8 @@
+## [2.2.0-nullsafety.2]
+ * Adding lockfile
+null safety
+null saafety
+
 ## [1.2.0] - 25-Mar-2019
 * Max number of chips can now be set using `maxChips` attribute
 
