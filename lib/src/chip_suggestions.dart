@@ -1,10 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:sunny_dart/helpers.dart';
 import 'package:sunny_dart/sunny_dart.dart';
 
 class ChipSuggestions<T> {
-  final List<T> suggestions;
-  final Suggestion<T> match;
+  final List<T>? suggestions;
+  final Suggestion<T>? match;
 
   const ChipSuggestions({this.suggestions, this.match});
 
@@ -12,28 +11,30 @@ class ChipSuggestions<T> {
       : suggestions = const [],
         match = null;
 
-  ChipSuggestions<T> removeAll(Iterable<T> chips) {
+  ChipSuggestions<T> removeAll(Iterable<T>? chips) {
     final set = {...?chips};
-    return ChipSuggestions(match: match, suggestions: [...suggestions.where((s) => !set.contains(s))]);
+    return ChipSuggestions(
+        match: match,
+        suggestions: [...suggestions!.where((s) => !set.contains(s))]);
   }
 }
 
 class Suggestion<T> {
-  final T item;
-  final String highlightText;
+  final T? item;
+  final String? highlightText;
 
   const Suggestion.highlighted({
-    @required this.item,
-    @required this.highlightText,
+    required this.item,
+    required this.highlightText,
   });
 
   const Suggestion._({
-    @required this.item,
-    @required this.highlightText,
+    required this.item,
+    required this.highlightText,
   });
 
   const Suggestion({
-    @required this.item,
+    required this.item,
   }) : highlightText = null;
 
   const Suggestion.empty()
@@ -45,8 +46,8 @@ class Suggestion<T> {
   bool get isEmpty => item == null;
 
   Suggestion<T> copy({
-    T suggestion,
-    String highlightText,
+    T? suggestion,
+    String? highlightText,
   }) {
     return Suggestion._(
       item: suggestion ?? this.item,

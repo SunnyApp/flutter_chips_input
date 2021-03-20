@@ -8,16 +8,9 @@
   <component name="ChangeListManager">
     <list default="true" id="ccea7879-7873-4656-9a21-d45675016680" name="Default" comment="Matching case">
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/Runner.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/Runner.xcodeproj/project.pbxproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/Runner.xcworkspace/contents.xcworkspacedata" beforeDir="false" afterPath="$PROJECT_DIR$/example/ios/Runner.xcworkspace/contents.xcworkspacedata" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/example/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/example/pubspec.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flutter_chips_input.iml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter_chips_input.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/flutter_chips_input.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/flutter_chips_input.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/chip_suggestions.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/chip_suggestions.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/chips_input.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/chips_input.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/src/chips_input_controller.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/src/chips_input_controller.dart" afterDir="false" />
@@ -37,7 +30,6 @@
       <executable />
     </execution>
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="Pixel_3_API_27" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -53,6 +45,14 @@
         <entry key="$PROJECT_DIR$" value="master" />
       </map>
     </option>
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
   </component>
   <component name="IgnoredFileRootStore">
     <option name="generatedRoots">
@@ -71,12 +71,14 @@
   </component>
   <component name="ProjectViewState">
     <option name="autoscrollFromSource" value="true" />
-    <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
     <property name="dart.analysis.tool.window.force.activate" value="false" />
     <property name="io.flutter.reload.alreadyRun" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../observable_collections" />
@@ -91,6 +93,7 @@
     <property name="project.structure.side.proportion" value="0.0" />
     <property name="settings.editor.selected.configurable" value="flutter.settings" />
     <property name="show.migrate.to.gradle.popup" value="false" />
+    <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -147,6 +150,7 @@
       </list>
     </option>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -157,6 +161,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1544869955736</updated>
+      <workItem from="1611279922069" duration="689000" />
+      <workItem from="1616221757915" duration="2114000" />
     </task>
     <task id="LOCAL-00001" summary="Trying to fix listeners">
       <created>1565126081314</created>
@@ -190,20 +196,19 @@
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Trying to fix listeners" />
@@ -211,60 +216,6 @@
     <MESSAGE value="Adding placeholder" />
     <MESSAGE value="Matching case" />
     <option name="LAST_COMMIT_MESSAGE" value="Matching case" />
-  </component>
-  <component name="WindowStateProjectService">
-    <state x="3140" y="215" key="#Project_Structure" timestamp="1585182929822">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state x="3140" y="215" key="#Project_Structure/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585182929822" />
-    <state width="1137" height="375" key="GridCell.Tab.0.bottom" timestamp="1585186652883">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.0.bottom/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652883" />
-    <state width="1137" height="375" key="GridCell.Tab.0.center" timestamp="1585186652883">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.0.center/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652883" />
-    <state width="1137" height="375" key="GridCell.Tab.0.left" timestamp="1585186652882">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.0.left/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652882" />
-    <state width="1137" height="375" key="GridCell.Tab.0.right" timestamp="1585186652883">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.0.right/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652883" />
-    <state width="1137" height="375" key="GridCell.Tab.1.bottom" timestamp="1585186652882">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.1.bottom/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652882" />
-    <state width="1137" height="375" key="GridCell.Tab.1.center" timestamp="1585186652881">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.1.center/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652881" />
-    <state width="1137" height="375" key="GridCell.Tab.1.left" timestamp="1585186652881">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.1.left/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652881" />
-    <state width="1137" height="375" key="GridCell.Tab.1.right" timestamp="1585186652882">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state width="1137" height="375" key="GridCell.Tab.1.right/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186652882" />
-    <state x="2741" y="23" key="SettingsEditor" timestamp="1585181325592">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state x="2741" y="23" key="SettingsEditor/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585181325592" />
-    <state x="3097" y="315" width="1086" height="715" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2" timestamp="1585183265574">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state x="3097" y="315" width="1086" height="715" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585183265574" />
-    <state x="3242" y="344" width="796" height="574" key="find.popup" timestamp="1585186583128">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state x="3242" y="344" width="796" height="574" key="find.popup/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585186583128" />
-    <state x="3221" y="309" width="838" height="1032" key="search.everywhere.popup" timestamp="1585185193847">
-      <screen x="2560" y="23" width="2560" height="1417" />
-    </state>
-    <state x="3221" y="309" width="838" height="1032" key="search.everywhere.popup/0.23.2560.1372/2560.23.2560.1417@2560.23.2560.1417" timestamp="1585185193847" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -284,31 +235,6 @@
           <line>164</line>
           <option name="timeStamp" value="6" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/src/chips_input_controller.dart</url>
-          <line>229</line>
-          <option name="timeStamp" value="20" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/src/chips_input_controller.dart</url>
-          <line>223</line>
-          <option name="timeStamp" value="21" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/src/chips_input_controller.dart</url>
-          <line>247</line>
-          <option name="timeStamp" value="22" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/src/chips_input_controller.dart</url>
-          <line>240</line>
-          <option name="timeStamp" value="23" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="Dart">
-          <url>file://$PROJECT_DIR$/lib/src/chips_input_controller.dart</url>
-          <line>255</line>
-          <option name="timeStamp" value="24" />
-        </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
         <breakpoint type="dart-exception">
@@ -318,5 +244,9 @@
         </breakpoint>
       </default-breakpoints>
     </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

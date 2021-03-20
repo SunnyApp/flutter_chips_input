@@ -9,11 +9,6 @@
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$/../collection_diff">
-      <excludeFolder url="file://$MODULE_DIR$/../collection_diff/.dart_tool" />
-      <excludeFolder url="file://$MODULE_DIR$/../collection_diff/.pub" />
-      <excludeFolder url="file://$MODULE_DIR$/../collection_diff/build" />
-    </content>
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/lib" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
@@ -25,16 +20,36 @@
       <excludeFolder url="file://$MODULE_DIR$/example/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/example/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/example/build" />
-    </content>
-    <content url="file://$MODULE_DIR$/../observable_collections">
-      <excludeFolder url="file://$MODULE_DIR$/../observable_collections/.dart_tool" />
-      <excludeFolder url="file://$MODULE_DIR$/../observable_collections/.pub" />
-      <excludeFolder url="file://$MODULE_DIR$/../observable_collections/build" />
-    </content>
-    <content url="file://$MODULE_DIR$/../sunny_dart">
-      <excludeFolder url="file://$MODULE_DIR$/../sunny_dart/.dart_tool" />
-      <excludeFolder url="file://$MODULE_DIR$/../sunny_dart/.pub" />
-      <excludeFolder url="file://$MODULE_DIR$/../sunny_dart/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/get_ip/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/get_ip/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/get_ip/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/get_ip/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/get_ip/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/get_ip/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/flutter_native_timezone/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/flutter_native_timezone/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/flutter_native_timezone/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/flutter_native_timezone/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/flutter_native_timezone/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/flutter_native_timezone/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/libphonenumber/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/libphonenumber/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/libphonenumber/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/device_info/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/device_info/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/device_info/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/device_info/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/device_info/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/device_info/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/devicelocale/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/devicelocale/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/devicelocale/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/devicelocale/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/devicelocale/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/devicelocale/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/libphonenumber/build" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/libphonenumber/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/example/ios/.symlinks/plugins/libphonenumber/.pub" />
     </content>
     <orderEntry type="jdk" jdkName="Android API 25 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
