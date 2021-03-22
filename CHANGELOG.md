@@ -1,3 +1,6 @@
+## [2.2.0+1]
+ * Minor bump
+
 ## [2.2.0-nullsafety.2]
  * Adding lockfile
 null safety
