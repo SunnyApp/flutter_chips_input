@@ -1,6 +1,6 @@
 name: flutter_chips_input_sunny
 author: Danvick Miller <danvickmiller@gmail.com>
-version: 2.2.0-nullsafety.2
+version: 2.2.0
 homepage: https://github.com/danvick/flutter_chips_input
 description: Flutter library for building input fields with InputChips as input options.
 environment: 
@@ -9,9 +9,9 @@ dependencies:
   after_layout: ^1.1.0
   collection_diff: ^2.0.3+5
   logging: ^1.0.0
-  observable_collections: ^0.6.1-nullsafety.6
+  observable_collections: ^0.7.0+1
   stream_transform: ^2.0.0
-  sunny_dart: ^0.8.2+2
+  sunny_dart: ^0.9.0+1
   flutter: 
     sdk: flutter
 dev_dependencies: 
