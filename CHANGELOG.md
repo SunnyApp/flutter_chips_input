@@ -1,3 +1,8 @@
+## [2.2.0+2]
+ * Fixing analyzer issues
+workspace
+Updated dependencies
+
 ## [2.2.0+1]
  * Minor bump
 
