@@ -7,11 +7,11 @@ environment:
   sdk: '>=2.12.0 <3.0.0'
 dependencies: 
   after_layout: ^1.1.0
-  collection_diff: ^2.0.3+5
-  logging: ^1.0.0
-  observable_collections: ^0.7.0+1
+  collection_diff: ^2.0.3+6
+  logging: ^1.0.1
+  observable_collections: ^0.7.0+2
   stream_transform: ^2.0.0
-  sunny_dart: ^0.9.0+1
+  sunny_dart: ^0.10.0+1
   flutter: 
     sdk: flutter
 dev_dependencies: 
