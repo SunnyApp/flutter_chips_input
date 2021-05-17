@@ -581,7 +581,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
   Iterable<Widget> _buildChips() {
     final int maxIndex = max(_chips.length - 1,
-        max(this._deleting.keys.max(0)!, this._adding.keys.notNull().max(0)!));
+        max(this._deleting.keys.max(0), this._adding.keys.notNull().max(0)));
 
     return rangeOf(0, maxIndex)
         .map((index) {

@@ -254,8 +254,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
       /// Provides us indexed access
       final suggestions = [...?_chipSuggest?.suggestions];
       final List<Map<String, String>> allTokens = suggestions.map((chip) {
-        final itemTokens = tokenizer(chip).keyed((_) => _.toLowerCase())
-            as Map<String, String>;
+        final itemTokens = tokenizer(chip).keyed((_) => _.toLowerCase());
         return itemTokens;
       }).toList();
       _log.info("allTokens: ${allTokens.length}");
@@ -278,7 +277,7 @@ class ChipsInputController<T> extends ChangeNotifier with Disposable {
                 .sortedBy(((a, b) => a.key.length.compareTo(b.key.length))
                     as int Function(
                         MapEntry<String, String>?, MapEntry<String, String>?)?)
-                .last!
+                .last
                 .value);
 
         _log.info("Found suggestion: $_suggestion");
